@@ -1,0 +1,227 @@
+#######################################################################################
+### Sybase Cron:                                                                      #
+###     Please schedule all Sybase related jobs in this cron                          #
+#######################################################################################
+###minute hour day month dayofweek command                                            #
+#######################################################################################
+##
+###Push All Daily Logs To Central Log Server
+##00 09 * * * /opt/sybase/cron_scripts/cron_jobs_system_logger.pl > /opt/sybase/cron_scripts/cron_logs/cron_jobs_system_logger.log 2>&1
+### Backup cronjobs....
+00 09 * * 0 /opt/sybase/cron_scripts/backup_cron_jobs.sh > /opt/sybase/cron_scripts/cron_logs/backup_cron_jobs.log 2>&1
+00 09 * * * /opt/sybase/cron_scripts/backup_cron_jobs.sh > /opt/sybase/cron_scripts/cron_logs/backup_cron_jobs_2.log 2>&1
+###Dump & load databases from Production to Standby
+00 21 * * * /opt/sybase/cron_scripts/dump_db.pl master > /opt/sybase/cron_scripts/cron_logs/master.dumpdb.log 2>&1
+05 20 * * 6 /opt/sybase/cron_scripts/dump_db.pl cdpvkm dumponly > /opt/sybase/cron_scripts/cron_logs/cdpvkm.dumpdb.log 2>&1
+#20 07 * * * /opt/sybase/cron_scripts/dump_db.pl cmf_data_lm > /opt/sybase/cron_scripts/cron_logs/cmf_data_lm.dumpdb.log 2>&1
+21 07 * * * /opt/sybase/cron_scripts/dump_db.pl linehaul_data > /opt/sybase/cron_scripts/cron_logs/linehaul_data.dumpdb.log 2>&1
+#30 07 * * * /opt/sybase/cron_scripts/dump_db.pl rev_hist_lm > /opt/sybase/cron_scripts/cron_logs/rev_hist_lm.dumpdb.log 2>&1
+#25 05 * * 0 /opt/sybase/cron_scripts/dump_db.pl lmscan > /opt/sybase/cron_scripts/cron_logs/lmscan.dumpdb.log 2>&1
+#34 21 * * 0 /opt/sybase/cron_scripts/dump_db.pl rev_hist dumponly > /opt/sybase/cron_scripts/cron_logs/rev_hist.dumpdb.log 2>&1
+##00 21 * * 5 /opt/sybase/cron_scripts/dump_db.pl rev_hist  > /opt/sybase/cron_scripts/cron_logs/rev_hist.dumpdb.log 2>&1
+##30 18 * * 6 /opt/sybase/cron_scripts/dump_db.pl rev_hist  > /opt/sybase/cron_scripts/cron_logs/rev_hist.dumpdb.log 2>&1
+#07 13 * * 0 /opt/sybase/cron_scripts/dump_db.pl cpscan > /opt/sybase/cron_scripts/cron_logs/cpscan.dumpdb.log 2>&1
+##00 18 * * 4 /opt/sybase/cron_scripts/dump_db.pl cpscan > /opt/sybase/cron_scripts/cron_logs/cpscan.dumpdb.log 2>&1
+##05 23 * * 0 /opt/sybase/cron_scripts/dump_db.pl arch_db dumponly > /opt/sybase/cron_scripts/cron_logs/arch_db.dumpdb.log 2>&1
+#00 14 * * 0 /opt/sybase/cron_scripts/dump_db.pl mpr_data > /opt/sybase/cron_scripts/cron_logs/mpr_data.dumpdb.log 2>&1
+##00 04 * * * /opt/sybase/cron_scripts/dump_db.pl mpr_data > /opt/sybase/cron_scripts/cron_logs/mpr_data.dumpdb.log 2>&1
+#27 22 * * 0 /opt/sybase/cron_scripts/dump_db.pl eput_db dumponly > /opt/sybase/cron_scripts/cron_logs/eput_db.dumpdb.log 2>&1
+#30 22 * * 0 /opt/sybase/cron_scripts/dump_db.pl canship_webdb  > /opt/sybase/cron_scripts/cron_logs/canship_webdb.dumpdb.log 2>&1
+#50 13 * * 0 /opt/sybase/cron_scripts/dump_db.pl canada_post dumponly > /opt/sybase/cron_scripts/cron_logs/canada_post.dumpdb.log 2>&1
+#50 23 * * 0 /opt/sybase/cron_scripts/dump_db.pl collectpickup dumponly > /opt/sybase/cron_scripts/cron_logs/collectpickup.dumpdb.log 2>&1
+#08 21 * * 6 /opt/sybase/cron_scripts/dump_db.pl liberty_db dumponly > /opt/sybase/cron_scripts/cron_logs/liberty_db.dumpdb.log 2>&1
+##08 20 * * 6 /opt/sybase/cron_scripts/dump_db.pl liberty_db > /opt/sybase/cron_scripts/cron_logs/liberty_db.dumpdb.log 2>&1
+##13 10 * * 3 /opt/sybase/cron_scripts/dump_db.pl liberty_db > /opt/sybase/cron_scripts/cron_logs/liberty_db.dumpdb.log 2>&1
+#28 00 * * 6 /opt/sybase/cron_scripts/dump_db.pl rate_update dumponly > /opt/sybase/cron_scripts/cron_logs/rate_update.dumpdb.log 2>&1
+##
+## Kill Replication Connections for DB Resync over the weekend
+00 01 * * 6 /opt/sybase/cron_scripts/kill_replication_connections.pl > /opt/sybase/cron_scripts/cron_logs/kill_replication_connections.log 2>&1
+##
+##Reassign Sybase Engines to alternate CPUs at each startup
+* 20 * * * /opt/sybase/cron_scripts/set_cpu_affinity.pl > /opt/sybase/cron_scripts/cron_logs/set_cpu_affinity.log 2>&1
+##
+##Load data into cmf_data from cmf tables in Btrieve
+35 01 * * 1-6 /opt/sybase/cron_scripts/load_perv.sh > /opt/sybase/cron_scripts/cron_logs/load_perv.log 2>&1
+00 08 * * 0 /opt/sybase/cron_scripts/load_perv.sh > /opt/sybase/cron_scripts/cron_logs/load_perv.log 2>&1
+30 02 * * * /opt/sybase/cron_scripts/monitor_cmf_load.pl > /opt/sybase/cron_scripts/cron_logs/monitor_cmf_load.log 2>&1
+35 02 * * * /opt/sybase/cron_scripts/error_scan_cmf_load.pl > /opt/sybase/cron_scripts/cron_logs/error_scan_cmf_load.log 2>&1
+#
+#Run sp_updRbc_cmf_scandates.pl
+00 09 * * * /opt/sybase/cron_scripts/updRbc_cmf_scandates.pl > /opt/sybase/cron_scripts/cron_logs/updRbc_cmf_scandates.log 2>&1
+##tttl_sortation weekly maintenance
+18 01 * * 0 /opt/sybase/cron_scripts/tttl_sortation_weekly_maintenance.pl > /opt/sybase/cron_scripts/cron_logs/tttl_sortation_weekly_maintenance.log 2>&1
+##Load_Nightly_cmt script
+#
+30 23 * * * /opt/sybase/cron_scripts/load_nightly_cmt_accounts.pl > /opt/sybase/cron_scripts/cron_logs/load_nightly_cmt_accounts.log 2>&1
+#
+## Delete cmfstats_coin_work 3 months old rows
+#
+00 23 * * 0 /opt/sybase/cron_scripts/rm_cmfstats_coin_work_old_recs.pl > /opt/sybase/cron_scripts/cron_logs/rm_cmfstats_coin_work_old_recs.log 2>&1
+#
+## Nightly truncate_staging_iq_tables script
+#
+45 23 * * * /opt/sybase/cron_scripts/truncate_staging_iq_tables.pl > /opt/sybase/cron_scripts/cron_logs/truncate_staging_iq_tables.log 2>&1
+#
+##Update consignee_city in tttl_dr about every twenty minutes
+30 01 * * 1-5 /opt/sybase/cron_scripts/update_consignee_city.pl > /opt/sybase/cron_scripts/cron_logs/update_consignee_city.log 2>&1
+#
+##Purge DELETED_delivery_address every week for the records that are more than a month old
+30 23 * * 0 /opt/sybase/cron_scripts/purge_DELETED_delivery_address.pl cpscan > /opt/sybase/cron_scripts/cron_logs/purge_DELETED_delivery_address.log 2>&1
+00 03 * * * /opt/sybase/cron_scripts/purge_trigger_tables_for_rep.pl > /opt/sybase/cron_scripts/cron_logs/purge_trigger_table_for_rep.log 2>&1
+00 00 1 * * /opt/sybase/cron_scripts/purge_disp_msg.pl > /opt/sybase/cron_scripts/cron_logs/purge_disp_msg.log 2>&1 
+#
+##Monthly Jobs Monitoring databases growth
+00 21 * * * /opt/sybase/cron_scripts/db_growth.pl cpscan > /opt/sybase/cron_scripts/cron_logs/db_growth_cpscan.log 2>&1
+30 21 * * * /opt/sybase/cron_scripts/db_growth.pl lmscan > /opt/sybase/cron_scripts/cron_logs/db_growth_lmscan.log 2>&1
+00 22 * * * /opt/sybase/cron_scripts/db_growth.pl cmf_data > /opt/sybase/cron_scripts/cron_logs/db_growth_cmf_data.log 2>&1
+10 22 * * * /opt/sybase/cron_scripts/db_growth.pl cmf_data_lm > /opt/sybase/cron_scripts/cron_logs/db_growth_cmf_data_lm.log 2>&1
+20 22 * * * /opt/sybase/cron_scripts/db_growth.pl rev_hist > /opt/sybase/cron_scripts/cron_logs/db_growth_rev_hist.log 2>&1
+30 22 * * * /opt/sybase/cron_scripts/db_growth.pl rev_hist_lm > /opt/sybase/cron_scripts/cron_logs/db_growth_rev_hist_lm.log 2>&1
+40 22 * * * /opt/sybase/cron_scripts/db_growth.pl mpr_data > /opt/sybase/cron_scripts/cron_logs/db_growth_mpr_data.log 2>&1
+50 22 * * * /opt/sybase/cron_scripts/db_growth.pl mpr_data_lm > /opt/sybase/cron_scripts/cron_logs/db_growth_mpr_data_lm.log 2>&1
+#
+##Sunday night sync report
+##20 01 * * 0 /opt/sybase/cron_scripts/sync_sunday.pl  > /opt/sybase/cron_scripts/cron_logs/sync_sunday.log 2>&1
+#
+##Purge the ever growing log due to 1608 errors
+##30 01 * * * /opt/sybase/cron_scripts/purge_CPDB2_error_log.sh > /opt/sybase/cron_scripts/cron_logs/purge_CPDB2_error_log.log 2>&1
+#
+##Monitor Sybase Server Error Log
+* * * * * /opt/sybase/cron_scripts/monitor_errorlog.pl >> /opt/sybase/cron_scripts/cron_logs/monitor_errorlog.log 2>&1
+#
+##Monitor Sybase database on standby server every 5 minutes
+00,05,10,15,20,25,30,35,40,45,50,55 * * * * /opt/sybase/cron_scripts/monitor_sybase.pl > /opt/sybase/cron_scripts/cron_logs/monitor_sybase.log 2>&1
+#
+##Monitor Blocks every 5 minutes
+#00,05,10,15,20,25,30,35,40,45,50,55 * * * 1-5 /opt/sybase/cron_scripts/monitor_blocks.pl > /opt/sybase/cron_scripts/cron_logs/monitor_blocks.log 2>&1
+#
+##Monitor IOs every 10 minutes
+00,10,20,30,40,50 * * * 1-5 /opt/sybase/cron_scripts/monitor_ios.pl > /opt/sybase/cron_scripts/cron_logs/monitor_ios.log 2>&1
+#
+##Monitor cronjob for commented every day
+00 09 * * * /opt/sybase/cron_scripts/monitor_cronjobs.pl crontab > /opt/sybase/cron_scripts/cron_logs/monitor_cronjobs.log 2>&1
+#
+##Frasier's Job To Update Libery DB through a stored proc
+00 03 * * 1-6 /opt/sybase/cron_scripts/liberty_update.pl > /opt/sybase/cron_scripts/cron_logs/liberty_update.log 2>&1
+#
+##Scan cost_analysis imports every minute
+* * * * * /opt/sybase/cron_scripts/monitor_cost_analysis_import.pl >> /opt/sybase/cron_scripts/cron_logs/monitor_cost_analysis_import.log 2>&1
+#
+30 23 * * 1-6 /opt/sybase/cron_scripts/nightly_ups_result.pl > /opt/sybase/cron_scripts/cron_logs/nightly_ups_result.log 2>&1
+#
+30 23 * * 1-6 /opt/sybase/cron_scripts/nightly_cp_result.pl > /opt/sybase/cron_scripts/cron_logs/nightly_cp_result.log 2>&1
+#
+##Update points_ranges table
+55 23 * * * /opt/sybase/cron_scripts/points_ranges_update.pl > /opt/sybase/cron_scripts/cron_logs/points_ranges_update.log 2>&1
+#
+##Update Loomis points_ranges table
+30 23 * * * /opt/sybase/cron_scripts/points_ranges_update_lm.pl > /opt/sybase/cron_scripts/cron_logs/points_ranges_update_lm.log 2>&1
+#
+##Update points_no_ranges table
+00 01 * * * /opt/sybase/cron_scripts/points_no_ranges_update.pl > /opt/sybase/cron_scripts/cron_logs/points_no_ranges_update.log 2>&1
+#
+##Update points_not_served table every night
+00 23 * * * /opt/sybase/cron_scripts/points_not_served.pl > /opt/sybase/cron_scripts/cron_logs/points_not_served.log 2>&1
+#
+##Refresh srvc_times_ground_nr
+00 03 6 * * /opt/sybase/cron_scripts/srvc_times_ground_nr_refresh.pl > /opt/sybase/cron_scripts/cron_logs/srvc_times_ground_nr_refresh.log 2>&1
+#
+## Insert data into COSInventory
+00,30 * * * * /opt/sybase/cron_scripts/COSInventory_inserts.pl > /opt/sybase/cron_scripts/cron_logs/COSInventory_inserts.log 2>&1
+#
+##Purge COSInventory table
+05 03 * * * /opt/sybase/cron_scripts/purge_COS_Inventory.pl > /opt/sybase/cron_scripts/cron_logs/purge_COS_Inventory.log 2>&1
+#
+##Run performance monitoring report three times a day
+##00 23,01,04,07,10,13,16,19 * * 1-6 /opt/sybase/cron_scripts/monitor_ase_performance.pl > /opt/sybase/cron_scripts/cron_logs/monitor_ase_performance.log 2>&1
+##00 * * * 1-6 /opt/sybase/cron_scripts/monitor_ase_performance.pl > /opt/sybase/cron_scripts/cron_logs/monitor_ase_performance.log 2>&1
+
+55 23 * * * /opt/sybase/cron_scripts/AddCorrExpiredUpdate.pl > /opt/sybase/cron_scripts/cron_logs/AddCorrExpiredUpdate.log 2>&1
+#
+00 01 * * 0 /opt/sybase/cron_scripts/StreetPerfect_data_xfr.pl > /opt/sybase/cron_scripts/cron_logs/StreetPerfect_data_xfr.log 2>&1
+#
+00 02 * * 0 /opt/sybase/cron_scripts/lm_stage_purge_data.pl > /opt/sybase/cron_scripts/cron_logs/lm_stage_purge_data.log 2>&1
+#
+00 07 * * * /opt/sybase/cron_scripts/flash_master_to_flash_data.pl > /opt/sybase/cron_scripts/cron_logs/flash_master_to_flash_data.log 2>&1
+#
+00 00 * * 0 /opt/sybase/cron_scripts/cmf_security_list_refresh.pl > /opt/sybase/cron_scripts/cron_logs/cmf_security_list_refresh.log 2>&1
+
+## ============================================== MPR PROCS ============================
+00 12 * * * /opt/sybase/cron_scripts/vp_alltotals.pl > /opt/sybase/cron_scripts/cron_logs/vp_alltotals.log 2>&1
+00 01 16 * * /opt/sybase/cron_scripts/vp_alltotals_terminal.pl > /opt/sybase/cron_scripts/cron_logs/vp_alltotals_terminal.log 2>&1 
+00 03 * * * /opt/sybase/cron_scripts/mpr_bcxref_work_update.pl > /opt/sybase/cron_scripts/cron_logs/mpr_bcxref_work_update.log 2>&1
+10 03 * * * /opt/sybase/cron_scripts/mpr_stop_time_load.pl > /opt/sybase/cron_scripts/cron_logs/mpr_stop_time_load.log 2>&1
+30 05 * * * /opt/sybase/cron_scripts/mpr_route_proc.pl > /opt/sybase/cron_scripts/cron_logs/mpr_route_proc.log 2>&1
+30 00 * * 0,3 /opt/sybase/cron_scripts/mpr_update_linkages_wts_from_rev.pl > /opt/sybase/cron_scripts/cron_logs/mpr_update_linkages_wts_from_rev.log 2>&1
+55,30 * * * * /opt/sybase/cron_scripts/mpr_linehaul_load.pl > /opt/sybase/cron_scripts/cron_logs/mpr_linehaul_load.log 2>&1
+03 09 * * 6 /opt/sybase/cron_scripts/mpr_gl_extract.pl > /opt/sybase/cron_scripts/cron_logs/mpr_gl_extract.log 2>&1
+30 * * * * /opt/sybase/cron_scripts/mpr_gl_groups_data.pl > /opt/sybase/cron_scripts/cron_logs/mpr_gl_groups_data.log 2>&1
+25 11 * * 0 /opt/sybase/cron_scripts/mpr_interline_costing_proc.pl > /opt/sybase/cron_scripts/cron_logs/mpr_interline_costing_proc.log 2>&1
+15 02 21 * * /opt/sybase/cron_scripts/mpr_pickup_final_costing_proc.pl > /opt/sybase/cron_scripts/cron_logs/mpr_pickup_final_costing_proc.log 2>&1
+
+##35 03 * * * /opt/sybase/cron_scripts/mpr_init_all_flags.pl > /opt/sybase/cron_scripts/cron_logs/mpr_init_all_flags.log 2>&1
+##================================================MPR PROCS===========================================
+
+## ============================================== MPR_DATA_LM PROCS ==================================
+00 03 * * * /opt/sybase/cron_scripts/mpr_lm_bcxref_work_update.pl > /opt/sybase/cron_scripts/cron_logs/mpr_lm_bcxref_work_update.log 2>&1
+30 05 * * * /opt/sybase/cron_scripts/mpr_lm_route_proc.pl > /opt/sybase/cron_scripts/cron_logs/mpr_lm_route_proc.log 2>&1
+30 16 * * 4 /opt/sybase/cron_scripts/mpr_lm_gl_extract.pl > /opt/sybase/cron_scripts/cron_logs/mpr_lm_gl_extract.log 2>&1
+21 * * * * /opt/sybase/cron_scripts/mpr_lm_gl_groups_data.pl > /opt/sybase/cron_scripts/cron_logs/mpr_lm_gl_groups_data.log 2>&1
+
+##================================================MPR_DATA_LM PROCS===========================================
+#
+##Weekly scan_RTP_insert process 
+00 04 * * 1 /opt/sybase/cron_scripts/scan_RTP_insert.pl > /opt/sybase/cron_scripts/cron_logs/scan_RTP_insert.log 2>&1
+#
+##Weekly Audit Report Emailed directly to Frank Orourke
+00 03 * * 1 /opt/sybase/cron_scripts/weekly_audit_rpt.pl > /opt/sybase/cron_scripts/cron_logs/weekly_audit_rpt.log 2>&1
+#
+##svp_proc processing
+00,39 * * * * /opt/sybase/cron_scripts/svp_proc_parcelwork_update.pl > /opt/sybase/cron_scripts/cron_logs/svp_proc_parcelwork_update.log 2>&1
+00,40 * * * * /opt/sybase/cron_scripts/svp_proc_parcelwork_update_lm.pl > /opt/sybase/cron_scripts/cron_logs/svp_proc_parcelwork_update_lm.log 2>&1
+30 04 * * * /opt/sybase/cron_scripts/svp_proc_eputwork_update.pl > /opt/sybase/cron_scripts/cron_logs/svp_proc_eputwork_update.log 2>&1
+30 04 * * 0 /opt/sybase/cron_scripts/svp_parcel_del_eval_execution.pl > /opt/sybase/cron_scripts/cron_logs/svp_parcel_del_eval_execution.log 2>&1
+#
+## preinvoice process
+00 08 * * 0 /opt/sybase/cron_scripts/preinvoice.pl > /opt/sybase/cron_scripts/cron_logs/preinvoice.log 2>&1
+#
+##Place any archive processes in this section
+00 05 * * 0 /opt/sybase/cron_scripts/archive_tttl_pa.pl > /opt/sybase/cron_scripts/cron_logs/archive_tttl_pa.log 2>&1
+#
+00 11 * * 6 /opt/sybase/cron_scripts/archive_tttl_ma_manifest.pl > /opt/sybase/cron_scripts/cron_logs/archive_tttl_ma_manifest.log 2>&1
+#
+05 11 * * 6 /opt/sybase/cron_scripts/archive_tttl_ma_barcode.pl > /opt/sybase/cron_scripts/cron_logs/archive_tttl_ma_barcode.log 2>&1
+#
+00 16 * * 6 /opt/sybase/cron_scripts/archive_tttl_dr.pl > /opt/sybase/cron_scripts/cron_logs/archive_tttl_dr.log 2>&1
+#
+00 01 * * 0  /opt/sybase/cron_scripts/archive_cwscans.pl > /opt/sybase/cron_scripts/cron_logs/archive_cwscans.log 2>&1
+#
+15 05 1 * *  /opt/sybase/cron_scripts/archive_revhstm.pl > /opt/sybase/cron_scripts/cron_logs/archive_revhstm.log 2>&1
+#
+10 05 1 * *  /opt/sybase/cron_scripts/archive_revhsts.pl > /opt/sybase/cron_scripts/cron_logs/archive_revhsts.log 2>&1
+#
+05 05 1 * *  /opt/sybase/cron_scripts/archive_revhstz.pl > /opt/sybase/cron_scripts/cron_logs/archive_revhsts.log 2>&1
+#
+00 05 1 * *  /opt/sybase/cron_scripts/archive_revhstr.pl > /opt/sybase/cron_scripts/cron_logs/archive_revhstr.log 2>&1
+#
+00,10,20,30,55 * * * *  /opt/sybase/cron_scripts/archive_svp_parcel.pl > /opt/sybase/cron_scripts/cron_logs/archive_svp_parcel.log 2>&1
+#
+##01 00 * * *  /opt/sybase/cron_scripts/tttl_ev_event_delete.pl > /opt/sybase/cron_scripts/cron_logs/tttl_ev_event_delete.log 2>&1
+#
+##10 00 * * *  /opt/sybase/cron_scripts/tttl_pa_parcel_delete.pl > /opt/sybase/cron_scripts/cron_logs/tttl_pa_parcel_delete.log 2>&1
+#
+#######################################Following is the misc jobs area that runs infrequently#####################################
+##Run ps -ef to see what processes are running that may be causing slowness
+###* * * * * /opt/sybase/cron_scripts/monitor_spid.pl >> /opt/sybase/cron_scripts/cron_logs/monitor_spid.log 2>&1
+##* * * * * /opt/sybase/cron_scripts/track_single_process.pl 4082 gl_load_complete akhan > /opt/sybase/cron_scripts/cron_logs/track_single_process.log 2>&1
+##* * * * * /opt/sybase/cron_scripts/track_single_process.pl 1003 linehaul_load_complete jrobinson > /opt/sybase/cron_scripts/cron_logs/track_single_process.log 2>&1
+###00 21 * * 1 /opt/sybase/cron_scripts/kill_certain_user.pl CPDB2 master > /opt/sybase/cron_scripts/cron_logs/kill_certain_user.log 2>&1
+###55 17 * * 3 /opt/sybase/cron_scripts/run_misc_sql_3.pl > /opt/sybase/cron_scripts/cron_logs/run_misc_sql_3.log 2>&1
+##00,15,30,45 * * * * /opt/sybase/cron_scripts/misc_sql.pl >> /opt/sybase/cron_scripts/cron_logs/misc_sql.log 2>&1
+###30 19 * * 6 /opt/sybase/cron_scripts/run_import_costing_data.pl > /opt/sybase/cron_scripts/cron_logs/run_import_costing_data.log 2>&1
+###30 23 * * 2 /opt/sybase/cron_scripts/increase_db_size.pl CPDB2 cpscan vg32_data_dev8 3000 event_seg > /opt/sybase/cron_scripts/cron_logs/CPDB2_cpsan_seg_inc.log 2>&1
+###00,05,10,15,20,25,30,35,40,45,50,55 * * * * /opt/sybase/cron_scripts/track_process_complete.pl > /opt/sybase/cron_scripts/cron_logs/track_process_complete.log 2>&1
+###40 02 * * * /opt/sybase/cron_scripts/employee_emp_term_backup.pl > /opt/sybase/cron_scripts/cron_logs/employee_emp_term_backup.log 2>&1
+##10 16 * * 3 /opt/sybase/cron_scripts/svp_parcel_url_execution.pl > /opt/sybase/cron_scripts/cron_logs/svp_parcel_url_execution.log 2>&1
+00 04 * * * /opt/sybase/cron_scripts/lh_actual.pl > /opt/sybase/cron_scripts/cron_logs/lh_actual.log 2>&1
+00 * * * * /opt/sybase/cron_scripts/extended_event.pl > /opt/sybase/cron_scripts/cron_logs/extended_event.log 2>&1

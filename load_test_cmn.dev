@@ -1,0 +1,630 @@
+#!/usr/bin/perl
+
+###################################################################################
+#Script:   This script converts cmf data from flat files into CPDATA1 test_cmf db #
+#          Once the ETL process completes, dump is taken which gets loaded to     #
+#          CPDB2, from where it gets loaded to IQ                                 #
+#                                                                                 #
+#										  #
+#Author:   Amer Khan                                                              #
+#Revision:                                                                        #
+#Date		Name		Description                                       #
+#---------------------------------------------------------------------------------#
+#02/03/04	Amer Khan	Originally created                                #
+#                                                                                 #
+###################################################################################
+
+#Usage Restrictions
+if ($#ARGV != 1){
+   #print "Usage: db_growth.pl CPDATA1 cpscan \n";
+#   die "Script Executed With Wrong Number Of Arguments\n";
+}
+
+#Setting Sybase environment is set properly
+
+require "/opt/sybase/cron_scripts/set_sybase_env.pl";
+require "/opt/sybase/cron_scripts/accents";
+
+$server = $ARGV[0];
+
+
+#$rmError = `rm /opt/sybase/cmf_data/*`;
+print "$rmError \n";
+#$scpError = `scp sybase\@cpfsdb1.canpar.com:/opt/sybase-12.5/cmf_data/data/*.TXT /opt/sybase/cmf_data/`;
+print "$scpError \n";
+#$cpError = `cp /opt/sybase/cmf_data/asa/*.TXT /opt/sybase/cmf_data/`;
+print "cpError: $cpError\n";
+if(1==2){ #start of don't run
+} #eof dont run
+#**************************Starting cmnnotes bcp***********************#
+print "*****Starting cmnnotes bcp******\n";
+open (BCPFILE,">/tmp/cmnnotes.dat") || print "cannot create $!\n";
+open (INFILE,"</opt/sybase/cmf_data/CMNNOTES.TXT") || print "cannot open: $!\n";
+
+$firstRow = 0;
+@rowArray = ();
+while (<INFILE>){
+#last;
+   $_ =~ s/^\d\d\d\d,//;
+   if(/^\d\d\d\d\d\d\d\d\w\w/){
+      if($firstRow == 1){
+         push(@rowArray,"||\n");
+         foreach $line (@rowArray){
+            $rowToAdd .= $line;
+         }
+         print BCPFILE $rowToAdd;
+         undef $rowToAdd;
+         undef @rowArray;
+         #@rowArray = ();
+         #print "Length of the array now: $#rowArray\n";
+      }
+   $firstRow = 1;
+   $_ =~ s/\0/ /g;
+   $_ =~ s/\r//g;
+   $_ =~ s/\n//g;
+   #$_ = $_."\n"; #remove all carraige returns and new line char and add one add the end of the row
+   $_ =~ s/(.............................)(..)(..)(.)/$1\/$2\/$3 $4/;
+   if (/(\/)(\D\D)(\/)/){
+      $_ =~ s/(\/)(\D\D)(\/)/ $2 /;
+   }
+   push(@rowArray,$_);
+   next;
+   }else{
+      if($firstRow == 0){next;}
+      $_ =~ s/\0/ /g;
+      $_ =~ s/\r//g;
+      $_ =~ s/\n//g;
+      push(@rowArray,$_);
+      next;
+   }
+      
+}#eof of while loop
+
+close BCPFILE;
+close INFILE;
+
+
+#Truncating table 
+$sqlError = `isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+drop index cmnnotes.cmnnotes_idx_1
+go
+truncate table cmnnotes
+go
+exit
+EOF
+bcp test_cmf..cmnnotes in /tmp/cmnnotes.dat -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -f/opt/sybase/bcp_data/cmf_data/cmnnotes.fmt -Q
+isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+if((select count(*) from cmnnotes) > 1)
+CREATE INDEX cmnnotes_idx_1
+ON cmnnotes(customer_num,note_group,note_date_time)
+else
+select "No data in table: cmnnotes"
+go
+exit
+EOF
+`;
+
+print "Messages from truncating and repopulating cmnnotes\n\n$sqlError\n\n";
+#****************************************************************************#
+#die;
+#} #eof dont run
+
+#**************************Starting cmnprice bcp***********************#
+print "******Starting cmnprice bcp******\n";
+open (BCPFILE,">/tmp/cmnprice.dat") || print "cannot create $!\n";
+open (INFILE,"</opt/sybase/cmf_data/CMNPRICE.TXT") || print "cannot open: $!\n";
+
+while (<INFILE>){
+#last;
+   $_ =~ s/^\d\d\d,//;
+   $_ =~ s/\0/ /g;
+   $_ =~ s/\r//g;
+   $_ =~ s/\n//g;
+   $_ = $_."\n"; #remove all carraige returns and new line char and add one add the end of the row
+
+   print BCPFILE $_;
+}#eof of while loop
+close BCPFILE;
+close INFILE;
+
+#Truncating table
+$sqlError = `isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+alter table cmnprice drop constraint cmnprice_pkey
+go
+truncate table cmnprice
+go
+exit
+EOF
+bcp test_cmf..cmnprice in /tmp/cmnprice.dat -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -f/opt/sybase/bcp_data/cmf_data/cmnprice.fmt -Q
+isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+if((select count(*) from cmnprice) > 1)
+ALTER TABLE cmnprice
+ADD CONSTRAINT cmnprice_pkey
+PRIMARY KEY NONCLUSTERED (customer_num)
+else
+select "No data in table: cmnprice"
+go
+exit
+EOF
+`;
+
+print "Messages from truncating and repopulating cmnprice\n\n$sqlError\n\n";
+#die;
+#} #eof of dont run
+
+#**************************Starting cmnrates bcp***********************#
+print "*****Starting cmnrates bcp******\n";
+open (BCPFILE,">/tmp/cmnrates.dat") || print "cannot create $!\n";
+open (INFILE,"</opt/sybase/cmf_data/CMNRATES.TXT") || print "cannot open: $!\n";
+
+while (<INFILE>){
+#last;
+   $_ =~ s/^\d\d\d,//;
+   $_ =~ s/\0/ /g; #Control characters to be taken out
+   $_ =~ s/\r//g;
+   $_ =~ s/\n//g;
+   $_ = $_."\n"; #remove all carraige returns and new line char and add one add the end of the row
+
+   if (/(........................)(..)(..)/){
+      $found1 = "1";
+   $_ =~ s/(........................)(..)(..)/$1\/$2\/$3/;
+      #print $_;
+   }
+   if ($found1 eq "1"){
+      ##print "found1 is 1\n";
+      if (/(.*.)(\/..\/..)(....................................................................................................................................................................................................)(..)(..)/){
+            #print "I have the second date\n";
+            $found2 = "1";
+            $_ =~ s/(.*.)(\/..\/..)(....................................................................................................................................................................................................)(..)(..)/$1$2$3\/$4\/$5/;
+            #print $_;
+      }
+   }
+   if ($found2 eq "1"){
+      if (/(\/..\/..)(.*.)(\/..\/..)(.........)(..)(..)/){
+            #print "I have the third date\n";
+            $found3 = "1";
+            $_ =~ s/(\/..\/..)(.*.)(\/..\/..)(.........)(..)(..)/$1$2$3$4\/$5\/$6/;
+            #print $_;
+      }
+   }
+   if ($found3 eq "1"){
+      if (/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.............................................................)(..)(..)/){
+            #print "I have the forth date\n";
+            $found4 = "1";
+            $_ =~ s/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.............................................................)(..)(..)/$1$2$3$4$5$6\/$7\/$8/;
+            #print $_;
+      }
+   }
+
+####################################################
+while (/(\/)(\D\D)(\/)/){
+#   print "Found a bad date: $1$2$3\n";
+   $_ =~ s/(\/)(\D\D)(\/)/ $2 /;
+#   print "$_\n";
+}
+
+next if (/^0\s/);
+#print "after removing bad dates\n";
+print BCPFILE $_;
+}#eof while loop
+
+close BCPFILE;
+close INFILE;
+
+#Truncating table
+$sqlError = `isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+alter table cmnrates drop constraint web_cmnrates_pkey
+go
+truncate table cmnrates
+go
+exit
+EOF
+bcp test_cmf..cmnrates in /tmp/cmnrates.dat -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -f/opt/sybase/bcp_data/cmf_data/cmnrates.fmt -Q
+isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+if((select count(*) from cmnrates) > 1)
+ALTER TABLE cmnrates
+ADD CONSTRAINT web_cmnrates_pkey
+PRIMARY KEY NONCLUSTERED (customer_num)
+else
+select "No data in table: cmnrates"
+go
+exit
+EOF
+`;
+
+print "Messages from truncating and repopulating cmnrates\n\n$sqlError\n\n";
+#**********************************************************************#
+#die;
+#} #eof dont run
+
+#**************************Starting cmnservc bcp***********************#
+print "*****Starting cmnservc bcp******\n";
+open (BCPFILE,">/tmp/cmnservc.dat") || print "cannot create $!\n";
+open (INFILE,"</opt/sybase/cmf_data/CMNSERVC.TXT") || print "cannot open: $!\n";
+
+while (<INFILE>){
+#last;
+   $_ =~ s/^\d\d\d,//;
+   $_ =~ s/\0/ /g; #Control characters to be taken out
+   $_ =~ s/\r//g;
+   $_ =~ s/\n//g;
+   $_ = $_."\n"; #remove all carraige returns and new line char and add one add the end of the row
+
+   if (/(.......................................)(..)(..)/){
+      $found1 = "1";
+   $_ =~ s/(.......................................)(..)(..)/$1\/$2\/$3/;
+      #print $_;
+   }
+   if ($found1 eq "1"){
+      ##print "found1 is 1\n";
+      if (/(.*.)(\/..\/..)(..............................................................................................................................................................................................................................................................................)(..)(..)/){
+            #print "I have the second date\n";
+            $found2 = "1";
+            $_ =~ s/(.*.)(\/..\/..)(..............................................................................................................................................................................................................................................................................)(..)(..)/$1$2$3\/$4\/$5/;
+            #print $_;
+      }
+   }
+   if ($found2 eq "1"){
+      if (/(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/){
+            #print "I have the third date\n";
+            $found3 = "1";
+            $_ =~ s/(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/$1$2$3$4\/$5\/$6/;
+            #print $_;
+      }
+   }
+   if ($found3 eq "1"){
+      if (/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(...............................)(..)(..)/){
+            #print "I have the forth date\n";
+            $found4 = "1";
+            $_ =~ s/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(...............................)(..)(..)/$1$2$3$4$5$6\/$7\/$8/;
+            #print $_;
+      }
+   }
+   if ($found4 eq "1"){
+      if (/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/){
+            #print "I have the fifth date\n";
+            $found5 = "1";
+            $_ =~ s/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/$1$2$3$4$5$6$7$8\/$9\/$10/;
+            #print $_;
+      }
+   }
+
+####################################################
+while (/(\/)(\D\D)(\/)/){
+#   print "Found a bad date: $1$2$3\n";
+   $_ =~ s/(\/)(\D\D)(\/)/ $2 /;
+#   print "$_\n";
+}
+#print "after removing bad dates\n";
+print BCPFILE $_;
+}#eof while loop
+
+close BCPFILE;
+close INFILE;
+
+
+#Truncating table
+$sqlError = `isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+alter table cmnservc drop constraint cmnservc_pkey
+go
+truncate table cmnservc
+go
+exit
+EOF
+bcp test_cmf..cmnservc in /tmp/cmnservc.dat -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -f/opt/sybase/bcp_data/cmf_data/cmnservc.fmt -Q
+isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+if((select count(*) from cmnservc) > 1)
+ALTER TABLE cmnservc
+ADD CONSTRAINT cmnservc_pkey
+PRIMARY KEY NONCLUSTERED (customer_num)
+else
+select "No data in table: cmnservc"
+go
+exit
+EOF
+`;
+
+print "Messages from truncating and repopulating cmnservc\n\n$sqlError\n\n";
+#die;
+
+#**********************************************************************#
+#}#eof dont run
+
+#**************************Starting cmnshipr bcp***********************#
+print "*****Starting cmnshipr bcp*****\n";
+open (BCPFILE,">/tmp/cmnshipr.dat") || print "cannot create $!\n";
+open (INFILE,"</opt/sybase/cmf_data/CMNSHIPR.TXT") || print "cannot open: $!\n";
+
+while (<INFILE>){
+#last;
+   $_ =~ s/^\d\d\d,//;
+   $_ =~ s/\0/ /g; #Control characters to be taken out
+   $_ =~ s/\r//g;
+   $_ =~ s/\n//g;
+   $_ = $_."\n"; #remove all carraige returns and new line char and add one add the end of the row
+
+   if (/(.......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................)(..)(..)/){
+      $found1 = "1";
+   $_ =~ s/(.......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................)(..)(..)/$1\/$2\/$3/;
+      #print $_;
+   }
+   if ($found1 eq "1"){
+      ##print "found1 is 1\n";
+      if (/(.*.)(\/..\/..)(...................)(..)(..)(.)/){
+            #print "I have the second date\n";
+            $found2 = "1";
+            $_ =~ s/(.*.)(\/..\/..)(...................)(..)(..)(.)/$1$2$3\/$4\/$5 $6/;
+            #print $_;
+      }
+   }
+   if ($found2 eq "1"){
+      if (/(\/..\/..)(.*.)(\/..\/...........)(....)(..)(..)/){
+            #print "I have the third date\n";
+            $found3 = "1";
+            $_ =~ s/(\/..\/..)(.*.)(\/..\/...........)(....)(..)(..)/$1$2$3$4\/$5\/$6/;
+            #print $_;
+      }
+   }
+   if ($found3 eq "1"){
+      if (/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/){
+            #print "I have the forth date\n";
+            $found4 = "1";
+            $_ =~ s/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/$1$2$3$4$5$6\/$7\/$8/;
+            #print $_;
+      }
+   }
+   if ($found4 eq "1"){
+      if (/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/){
+            #print "I have the fifth date\n";
+            $found5 = "1";
+            $_ =~ s/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/$1$2$3$4$5$6$7$8\/$9\/$10/;
+            #print $_;
+      }
+   }
+   if ($found5 eq "1"){
+      if (/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/){
+            #print "I have the sixth date\n";
+            $found6 = "1";
+            $_ =~ s/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/$1$2$3$4$5$6$7$8$9$10\/$11\/$12/;
+            #print $_;
+      }
+   }
+   if ($found6 eq "1"){
+      if (/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/){
+            #print "I have the sixth date\n";
+            $found7 = "1";
+            $_ =~ s/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(....)(..)(..)/$1$2$3$4$5$6$7$8$9$10\/$11\/$12/;
+            #print $_;
+      }
+   }
+   if ($found7 eq "1"){
+      if (/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(...................................)(..)(..)/){
+            #print "I have the seventh date\n";
+            $found8 = "1";
+            $_ =~ s/(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(.*.)(\/..\/..)(...................................)(..)(..)/$1$2$3$4$5$6$7$8$9$10$11$12\/$13\/$14/;
+            #print $_;
+      }
+   }
+
+####################################################
+while (/(\/)(\D\D)(\/)/){
+#   print "Found a bad date: $1$2$3\n";
+   if(/(\d\d\D\D)(\/)(\D\D)(\/)/){
+      $_ =~ s/(\d\d\D\D)(\/)(\D\D)(\/)/     $3 /;
+      next;
+   }
+   if(/1900\/00\/00/){
+      $_ =~ s/1900\/00\/00/          /;
+      next;
+   }
+   $_ =~ s/(\/)(\D\D)(\/)/ $2 /g;
+#   print "$_\n";
+}
+
+$_ =~ s/(^.{815})(.....)(\D\D)(...)/$1          /;
+
+#print "after removing bad dates\n";
+next if(/^\s\s/);
+print BCPFILE $_;
+}#eof while loop
+
+close BCPFILE;
+close INFILE;
+
+#Truncating table
+$sqlError = `isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+alter table cmnshipr drop constraint web_cmnshipr_pkey
+go
+truncate table cmnshipr
+go
+exit
+EOF
+bcp test_cmf..cmnshipr in /tmp/cmnshipr.dat -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -f/opt/sybase/bcp_data/cmf_data/cmnshipr.fmt -m0 -b1 -Q
+isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+if((select count(*) from cmnshipr) > 1)
+ALTER TABLE cmnshipr
+ADD CONSTRAINT web_cmnshipr_pkey
+PRIMARY KEY NONCLUSTERED (customer_num)
+else
+select "No data in table: cmnshipr"
+go
+exit
+EOF
+`;
+
+print "Messages from truncating and repopulating cmnshipr\n\n$sqlError\n\n";
+#die;
+
+#**************************Starting cmnbilto bcp***********************#
+print "****Starting cmnbilto bcp*****\n";
+
+open (BCPFILE,">/tmp/cmnbilto.dat") || print "cannot create $!\n";
+open (INFILE,"</opt/sybase/cmf_data/CMNBILTO.TXT") || print "cannot open: $!\n";
+
+while (<INFILE>){
+#last;
+   $_ =~ s/^\d\d\d,//;
+   $_ =~ s/\0/ /g; #Control characters to be taken out
+   $_ =~ s/\r//g;
+   $_ =~ s/\n//g;
+   $_ = $_."\n"; #remove all carraige returns and new line char and add one add the end of the row
+
+####################################################
+next if(/^\s\s/); #Don't write if it is an empty line
+print BCPFILE $_;
+}#eof while loop
+
+close BCPFILE;
+close INFILE;
+
+#Truncating table
+$sqlError = `isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+alter table cmnbilto drop constraint cmnbilto_pkey
+go
+truncate table cmnbilto
+go
+exit
+EOF
+bcp test_cmf..cmnbilto in /tmp/cmnbilto.dat -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -f/opt/sybase/bcp_data/cmf_data/cmnbilto.fmt -Q
+isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+if((select count(*) from cmnbilto) > 1)
+ALTER TABLE cmnbilto
+ADD CONSTRAINT cmnbilto_pkey
+PRIMARY KEY NONCLUSTERED (customer_num)
+else
+select "No data in table: cmnbilto"
+go
+exit
+EOF
+`;
+
+print "Messages from truncating and repopulating cmnbilto\n\n$sqlError\n\n";
+#die;
+
+#**************************Starting cmnsales bcp***********************#
+print "******Starting cmnsales bcp*******\n";
+
+open (BCPFILE,">/tmp/cmnsales.dat") || print "cannot create $!\n";
+open (INFILE,"</opt/sybase/cmf_data/CMNSALES.TXT") || print "cannot open: $!\n";
+
+while (<INFILE>){
+#last;
+   $_ =~ s/^\d\d\d,//;
+   $_ =~ s/\0/ /g; #Control characters to be taken out
+   $_ =~ s/\r//g;
+   $_ =~ s/\n//g;
+   $_ = $_."\n"; #remove all carraige returns and new line char and add one add the end of the row
+
+####################################################
+next if(/^\s\s/); #Don't write if it is an empty line
+print BCPFILE $_;
+}#eof while loop
+
+close BCPFILE;
+close INFILE;
+
+#Truncating table
+$sqlError = `isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+alter table cmnsales drop constraint cmnsales_pkey
+go
+truncate table cmnsales
+go
+exit
+EOF
+bcp test_cmf..cmnsales in /tmp/cmnsales.dat -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -f/opt/sybase/bcp_data/cmf_data/cmnsales.fmt -Q
+isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+if((select count(*) from cmnsales) > 1)
+ALTER TABLE cmnsales
+ADD CONSTRAINT cmnsales_pkey
+PRIMARY KEY NONCLUSTERED (customer_num)
+else
+select "No data in table: cmnsales"
+go
+exit
+EOF
+`;
+
+print "Messages from truncating and repopulating cmnsales\n\n$sqlError\n\n";
+#die;
+
+#}# eof of dont run
+#**************************Starting cmnndata bcp***********************#
+print "******Starting cmnndata bcp*******\n";
+
+open (BCPFILE,">/tmp/cmnndata.dat") || print "cannot create $!\n";
+open (INFILE,"</opt/sybase/cmf_data/CMNNDATA.TXT") || print "cannot open: $!\n";
+
+while (<INFILE>){
+#last;
+   $_ =~ s/^\d\d,//;
+   $_ =~ s/\0/ /g; #Control characters to be taken out
+   $_ =~ s/\r//g;
+   $_ =~ s/\n//g;
+   $_ = $_."\n"; #remove all carraige returns and new line char and add one add the end of the row
+
+####################################################
+next if(/^\s\s/); #Don't write if it is an empty line
+print BCPFILE $_;
+}#eof while loop
+
+close BCPFILE;
+close INFILE;
+
+#Truncating table
+$sqlError = `isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+alter table cmnndata drop constraint cmnndata_pkey
+go
+truncate table cmnndata
+go
+exit
+EOF
+bcp test_cmf..cmnndata in /tmp/cmnndata.dat -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -f/opt/sybase/bcp_data/cmf_data/cmnndata.fmt -Q
+isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+use test_cmf
+go
+if((select count(*) from cmnndata) > 1)
+ALTER TABLE cmnndata
+ADD CONSTRAINT cmnndata_pkey
+PRIMARY KEY NONCLUSTERED (customer)
+else
+select "No data in table: cmnndata"
+go
+exit
+EOF
+`;
+
+print "Messages from truncating and repopulating cmnndata\n\n$sqlError\n\n";
+#die;
+#}# eof of dont run
+
+
