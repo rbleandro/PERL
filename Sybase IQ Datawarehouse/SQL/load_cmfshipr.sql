@@ -1,0 +1,73 @@
+truncate table cmfshipr;
+LOAD into table cmfshipr 
+(
+    customer_num               '|:|',
+    customer_name              '|:|',
+    address_line_1             '|:|',
+    address_line_2             '|:|',
+    city                       '|:|',
+    province                   '|:|',
+    postal_zip                 '|:|',
+    billto_type_flag           '|:|',
+    billto_account             '|:|',
+    shipping_contact           '|:|',
+    shipping_contact_title     '|:|',
+    shipping_phone             '|:|',
+    shipping_phone_ext         '|:|',
+    shipping_fax               '|:|',
+    shipping_email_address     '|:|',
+    billing_contact            '|:|',
+    billing_contact_title      '|:|',
+    billing_phone              '|:|',
+    billing_phone_ext          '|:|',
+    billing_fax                '|:|',
+    billing_email_address      '|:|',
+    trace_claims_contact       '|:|',
+    trace_claims_contact_title '|:|',
+    trace_claims_phone         '|:|',
+    trace_claims_phone_ext     '|:|',
+    trace_claims_fax           '|:|',
+    trace_claims_email_address '|:|',
+    cod_contact                '|:|',
+    cod_contact_title          '|:|',
+    cod_phone                  '|:|',
+    cod_phone_ext              '|:|',
+    cod_fax                    '|:|',
+    cod_email_address          '|:|',
+    language_flag              '|:|',
+    national_account_flag      '|:|',
+    national_account_name      '|:|',
+    national_account_customer  '|:|',
+    pull_invoice_flag          '|:|',
+    pull_cod_flag              '|:|',
+    account_type               '|:|',
+    obsolete                   '|:|',
+    default_sales_rep          '|:|',
+    override_sales_rep         '|:|',
+    sales_region               '|:|',
+    default_collector          '|:|',
+    override_collector         '|:|',
+    start_date                 '|:|',
+    last_modified_user         '|:|',
+    last_modified_date_time    '|:|',
+    last_transaction           '|:|',
+    last_payment               '|:|',
+    last_invoice               '|:|',
+    reinstate_date             '|:|',
+    cancellation_date          '|:|',
+    cancellation_code          '|:|',
+    cancellation_details       '|:|',
+    reactivate_date            '|:|',
+    payment_terms              '|:|',
+    no_damage_claims           '|:|',
+    no_shortage_claims         '|:|',
+    no_cod_claims              '\n'
+)
+
+from '/opt/sybase/bcp_data/cmf_data/cmfshipr_ins.dat'
+QUOTES OFF
+ESCAPES OFF
+BYTE ORDER LOW
+FORMAT ascii
+NOTIFY 100000
+IGNORE CONSTRAINT UNIQUE 0;

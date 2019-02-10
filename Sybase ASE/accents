@@ -1,0 +1,46 @@
+#!/usr/bin/perl -w 
+
+#This the mapping for all french characters. It converts DOS based french characters to ASCII based
+
+$ASC{140}=238;
+$ASC{130}=233;
+$ASC{144}=201;
+$ASC{147}=244;
+$ASC{133}=224;
+$ASC{135}=231;
+$ASC{136}=234;
+$ASC{138}=232;
+$ASC{142}=196;
+$ASC{143}=197;
+$ASC{146}=198;
+$ASC{128}=199;
+$ASC{165}=209;
+$ASC{153}=214;
+$ASC{154}=220;
+$ASC{160}=225;
+$ASC{145}=230;
+$ASC{161}=237;
+$ASC{164}=241;
+$ASC{149}=242;
+$ASC{162}=243;
+$ASC{148}=246;
+$ASC{151}=249;
+$ASC{163}=250;
+$ASC{150}=251;
+$ASC{129}=252;
+$ASC{152}=255;
+$ASC{131}=226;
+
+# The following is to convert COBOL numeric to ASCII numeric
+$COB{'p'}=0;
+$COB{'q'}=1;
+$COB{'r'}=2;
+$COB{'s'}=3;
+$COB{'t'}=4;
+$COB{'u'}=5;
+$COB{'v'}=6;
+$COB{'w'}=7;
+$COB{'x'}=8;
+$COB{'y'}=9;
+
+

@@ -1,0 +1,108 @@
+                              +-----------------+
+                              |   Stack Trace   |
+                              +-----------------+
+
+Current thread: main
+java.lang.InternalError: Can't connect to X11 window server using ':0.0' as the value of the DISPLAY variable.
+	at sun.awt.X11GraphicsEnvironment.initDisplay(Native Method)
+	at sun.awt.X11GraphicsEnvironment.<clinit>(Unknown Source)
+	at java.lang.Class.forName0(Native Method)
+	at java.lang.Class.forName(Unknown Source)
+	at java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment(Unknown Source)
+	at sun.awt.motif.MToolkit.<clinit>(Unknown Source)
+	at java.lang.Class.forName0(Native Method)
+	at java.lang.Class.forName(Unknown Source)
+	at java.awt.Toolkit$2.run(Unknown Source)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.awt.Toolkit.getDefaultToolkit(Unknown Source)
+	at com.sybase.util.ImageUtils.loadImage(ImageUtils.java)
+	at com.sybase.util.ImageLoader.loadImage(ImageLoader.java)
+	at com.sybase.util.ImageLoader.getImage(ImageLoader.java)
+	at sybase.isql.ISQLImages.getImage(ISQLImages.java:61)
+	at sybase.isql.WindowManager.<clinit>(WindowManager.java:30)
+	at sybase.isql.isql.main(isql.java:558)
+
+
+
+                                  +----------+
+                                  |   ISQL   |
+                                  +----------+
+
+Sun Jul 19 09:26:19 EDT 2009
+ISQL version = 9.0.2, Build 3785
+CommandLineOptions
+  Full command line: (none)
+  ConnectionInfo: <JDBCDRIVER>=ianywhere.ml.jdbcodbc.IDriver
+  Command tail: (none)
+  Initial SQL statement: (none)
+  Execute initial SQL statement: No
+  Use GUI: Yes
+  Quiet mode is: Off
+  Syntax check mode is: Off
+  Default database type: ASA
+
+No current database connection
+Currently executing statements: (none)
+
+Current parser state:
+  (No current ISQL parser)
+Settings:
+  maxRowsFetchedForUI=500
+  showMultipleResultSets=false
+The fast launcher is not running
+
+
+                               +---------------+
+                               |   Classpath   |
+                               +---------------+
+
+/opt/sybase/ASIQ-12_7/java/isql.jar
+    Timestamp=2009-01-27 20:17:07.0
+    Length=1034602
+
+/opt/sybase/shared/jConnect-5_5/classes/jconn2.jar
+    Timestamp=2006-10-05 13:25:28.0
+    Length=939985
+
+/opt/sybase/ASIQ-12_7/java/jlogon.jar
+    Timestamp=2009-01-27 20:13:21.0
+    Length=202595
+
+/opt/sybase/ASIQ-12_7/java/jodbc.jar
+    Timestamp=2009-01-27 19:11:03.0
+    Length=183517
+
+/opt/sybase/shared/java/SCEditor142.jar
+    Timestamp=2008-11-03 16:53:17.0
+    Length=346128
+
+/opt/sybase/shared/java/jsyblib142.jar
+    Timestamp=2008-11-03 16:52:59.0
+    Length=269230
+
+/opt/sybase/shared/java/JComponents142.jar
+    Timestamp=2009-01-27 20:13:13.0
+    Length=856342
+
+/opt/sybase/shared/sun/javahelp-1_1/jh.jar
+    Timestamp=2002-06-24 12:36:00.0
+    Length=347246
+
+/opt/sybase/shared/java/HelpManager11.jar
+    Timestamp=2008-11-03 16:53:03.0
+    Length=56336
+
+/opt/sybase/ASIQ-12_7/java/xerces.jar
+    Timestamp=2006-02-07 16:21:25.0
+    Length=854256
+
+/opt/sybase/ASIQ-12_7/java/xml4j.jar
+    Timestamp=2006-02-07 16:21:25.0
+    Length=10645
+
+
+
+                             +-------------------+
+                             |   Look and Feel   |
+                             +-------------------+
+

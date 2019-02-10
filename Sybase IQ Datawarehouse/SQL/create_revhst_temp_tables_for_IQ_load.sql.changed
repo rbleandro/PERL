@@ -1,0 +1,22 @@
+use rev_hist
+go     
+PRINT '<<< Re-creating temp tables for rev_hist load >>>'
+go     
+select convert(numeric(20),0) record_id into tempdb..bcxref_ins --from bcxref_iq
+go     
+select '0' shipper_num into tempdb..revhstd_ins --from revhstd_iq where 1=2
+go     
+select '0' shipper_num into tempdb..revhstd1_ins --from revhstd1_iq where 1=2
+go     
+select convert(int,0) linkage into tempdb..revhstf_ins --from revhstf_iq where 1=2
+go     
+select convert(numeric(20),0) record_id into tempdb..revhstf1_ins --from revhstf1_iq
+go     
+select convert(int,0) linkage into tempdb..revhsth_ins --from revhsth_iq where 1=2
+go     
+select '0' invoice into tempdb..revhstm_ins --from revhstm_iq where 1=2
+go     
+select convert(int,0) linkage into tempdb..revhstr_ins --from revhstr_iq where 1=2
+go     
+select convert(numeric(20),0) record_id into tempdb..revhstz_ins --from revhstz_iq
+go     

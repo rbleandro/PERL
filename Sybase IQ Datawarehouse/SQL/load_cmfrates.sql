@@ -1,0 +1,66 @@
+LOAD into table cmfrates 
+(
+    customer_num                   '|:|',
+    ground_rate_code               '|:|',
+    select_rate_code               '|:|',
+    us_rate_code                   '|:|',
+    put_rate_code                  '|:|',
+    rate_renewal_date              '|:|',
+    discount_type                  '|:|',
+    association_code               '|:|',
+    individual_discount            '|:|',
+    discount_at_source             '|:|',
+    commitment_1                   '|:|',
+    commitment_2                   '|:|',
+    commitment_3                   '|:|',
+    commitment_4                   '|:|',
+    commitment_5                   '|:|',
+    commitment_6                   '|:|',
+    commitment_7                   '|:|',
+    commitment_8                   '|:|',
+    commitment_9                   '|:|',
+    commitment_10                  '|:|',
+    commitment_11                  '|:|',
+    commitment_12                  '|:|',
+    commitment_13                  '|:|',
+    discount_1                     '|:|',
+    discount_2                     '|:|',
+    discount_3                     '|:|',
+    discount_4                     '|:|',
+    discount_5                     '|:|',
+    discount_6                     '|:|',
+    discount_7                     '|:|',
+    discount_8                     '|:|',
+    discount_9                     '|:|',
+    discount_10                    '|:|',
+    discount_11                    '|:|',
+    discount_12                    '|:|',
+    discount_13                    '|:|',
+    yearly_commitment              '|:|',
+    commitment_effective_date      '|:|',
+    rate_correction                '|:|',
+    rate_correction_effective_date '|:|',
+    pst_charge_flag                '|:|',
+    pst_exempt_license             '|:|',
+    gst_charge_flag                '|:|',
+    shipping_charges_ytd           '|:|',
+    commitment_ytd                 '|:|',
+    discount_earned_ytd            '|:|',
+    discount_held_ytd              '|:|',
+    last_ytd_update                '|:|',
+    pickup_status_flag             '|:|',
+    pickup_days_of_week            '|:|',
+    input_type_a                   '|:|',
+    input_type_b                   '|:|',
+    input_type_c                   '|:|',
+    audit_flag                     '|:|',
+    free_pods                      '\n'
+)
+
+from '/opt/sybase/bcp_data/cmf_data/cmfrates_ins.dat'
+QUOTES OFF
+ESCAPES OFF
+BYTE ORDER LOW
+FORMAT ascii
+NOTIFY 100000
+IGNORE CONSTRAINT UNIQUE 0;

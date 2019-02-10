@@ -1,0 +1,22 @@
+#
+# A fatal error has been detected by the SAP Java Virtual Machine:
+#
+#  SIGSEGV (0xb) at pc=0x0000000000000000, pid=7222, tid=140736431466240
+# accessing faulting address: 0x0000000000000000
+#
+# JRE version: Java(TM) SE Runtime Environment (7.0_51) (build 7.1.015)
+# Java VM: SAP Java Server VM (7.1.015 24.51-b03 Feb  9 2014 00:32:04 - 71_REL - optU - linux amd64 - 6 - bas2:211127 (mixed mode) compressed oops)
+# Problematic frame:
+# C  0x0000000000000000 (sp=0x00007fffc100fe58) (pc=0x0000000000000000)
+#
+# No core dump will be written (Core dumps have been disabled. To enable core dumping, try "ulimit -c unlimited" before starting Java again)
+#
+# If you would like to submit a bug report, please visit:
+#   http://service.sap.com/message
+# Please save the hs_err file(s) and the written core dump for further error analysis
+# See SAP note 1500116 for further information on collecting core dumps after SAPJVM crashes
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#
+
+Date: 2017-06-29 Time: 05:12:11
