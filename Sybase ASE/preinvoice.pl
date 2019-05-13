@@ -277,10 +277,12 @@ print 'Error occurred'
 
 End
 if (\@\@error = 0)
-
+Begin
 -- Step 4: Assign Invoice Numbers
 -----------------------------------
+execute lm_inv_cal_weeklypickup_charge  \@invoice_date
 execute lm_inv_assign_invnumber   \@invoice_date
+End
 else 
 Begin
 print 'Error occurred'

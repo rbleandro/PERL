@@ -144,7 +144,7 @@ if($sqlError =~ /Msg/ && $sqlError !~ /2601/ && $sqlError !~ /515/){
       select \"Deleting for following date\:\", \@run_date
       delete svp_records where date_inserted >= \@run_date
       delete svp_messages where inserted_on_cons > convert(datetime,convert(date,getdate()))
-      delete svp_parcel from svp_parcel where inserted_on_cons >= \@run_date
+      delete svp_parcel from svp_parcel (index idx5) where inserted_on_cons >= \@run_date
       go
       exit
       EOF
@@ -255,7 +255,7 @@ if($sqlError =~ /Msg/ && $sqlError !~ /2601/ && $sqlError !~ /515/){
       select \"Deleting for following date\:\", \@run_date
       delete svp_records where date_inserted >= \@run_date
       delete svp_messages where inserted_on_cons > convert(datetime,convert(date,getdate()))
-      delete svp_parcel from svp_parcel where inserted_on_cons >= \@run_date
+      delete svp_parcel from svp_parcel (index idx5) where inserted_on_cons >= \@run_date
       go
       declare \@now datetime
       set \@now=getdate()
@@ -378,16 +378,6 @@ EOF
 #}# AA  End of If
 
 #Execute source_of_failure in the end...
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: rleandro\@canpar.com
-Subject: Source of failure proc about to begin.
-
-Check execution plan.
-
-EOF
-`;
-
 
 $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1

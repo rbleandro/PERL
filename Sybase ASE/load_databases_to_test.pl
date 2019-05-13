@@ -1,16 +1,20 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Script:   This script checks SVP URL delays                                 #
-#                                                                            #
-#Author:	Amer Khan						     #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#Oct 12 2016	Amer Khan	Created					     #
-##############################################################################
+#Usage Restrictions
+if ($#ARGV < 1){
+   print "Usage: load_databases_to_test.pl originDB destDB \n";
+   die "Script Executed With Wrong Number Of Arguments\n";
+}
 
-$database = $ARGV[0];
+$originDB = $ARGV[0];
+$destDB = $ARGV[1];
+
+my $dba = $ARGV[2];
+if (defined $dba) {
+    $mail=$dba;
+} else {
+    $mail='CANPARDatabaseAdministratorsStaffList';
+} 
 
 $prodserver='CPSYBTEST';
 
@@ -19,7 +23,6 @@ print "Server Being Loaded: $prodserver\n";
 #Set starting variables
 $currTime = localtime();
 $startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
 $startMin=sprintf('%02d',((localtime())[1]));
 
 #$my_pid = getppid();
@@ -35,20 +38,27 @@ $startMin=sprintf('%02d',((localtime())[1]));
 #print "No Previous process is running, continuing\n";
 #}
 #
-#print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+
+print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 #Cleaning up the backup volume to free space (deletes all files older than 7 days)
-$deleteoldfiles =`find /home/sybase/db_backups/ -mindepth 1 -mtime +7 -delete`;
+`sudo find /home/sybase/db_backups/ -mindepth 1 -mtime +60 -delete`;
 
 $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
 go
-exec rp_kill_db_processes '$database'
+exec rp_kill_db_processes '$destDB'
 go
-load database $database from "/home/sybase/db_backups/$database.dmp" 
+load database $destDB from "/home/sybase/db_backups/$originDB.dmp" 
 go
-online database $database
+online database $destDB
+go
+use $destDB
+go
+dbcc settrunc(ltm,ignore)
+go
+checkpoint $destDB
 go
 exit
 EOF
@@ -59,7 +69,7 @@ print $sqlError."\n";
 $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+To: $mail\@canpar.com
 Subject: Errors - load_databases_to_test at $finTime
 
 $sqlError
@@ -71,8 +81,8 @@ $finTime = localtime();
 print "Time Finished: $finTime\n";
 
 `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Success - load_databases_to_test for $database at $finTime
+To: $mail\@canpar.com
+Subject: Success - load_databases_to_test for $destDB at $finTime
 
 $sqlError
 EOF

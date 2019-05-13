@@ -22,7 +22,7 @@ $startMin=sprintf('%02d',((localtime())[1]));
 
 
 $my_pid = getppid();
-$isProcessRunning =`ps -ef|grep sybase|grep adp_load_barcodes.pl|grep -v grep|grep -v $my_pid|grep -v "vim adp_load_barcodes.pl"|grep -v "less adp_load_barcodes.pl"`;
+$isProcessRunning =`ps -ef|grep sybase|grep scan_compliance_stats.pl|grep -v grep|grep -v $my_pid|grep -v "vim scan_compliance_stats.pl"|grep -v "less scan_compliance_stats.pl"`;
 
 #print "My pid: $my_pid\n";
 print "Running: $isProcessRunning \n";
@@ -38,15 +38,21 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF 2>&1
-use lmscan
+use scan_compliance
 go
-exec adp_load_barcodes null, null
-go   
+declare \@startdate date
+declare \@enddate date
+
+set \@enddate = dateadd(dd,-7,getdate())
+set \@startdate = dateadd(dd,-8,getdate())
+
+execute ScanComplianceStats \@startdate, \@enddate,0
+
+select 'Procedure ScanComplianceStats executed for start date = ' + convert(varchar(50),\@startdate) + ' and end date = ' + convert(varchar(50),\@enddate)
+go
 exit
 EOF
 `;
-
-print "Any message from the proc execution...\n $sqlError \n";
 
 if ($sqlError =~ /Msg/ || $sqlError =~ /no|not/ || $sqlError =~ /error/i){
 print $sqlError."\n";
@@ -54,30 +60,18 @@ print $sqlError."\n";
 $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
-To:CANPARDatabaseAdministratorsStaffList\@canpar.com 
-Subject: Error: adp_load_barcodes at $finTime
+To:CANPARDatabaseAdministratorsStaffList\@canpar.com
+Subject: Error: scan_compliance_stats at $finTime
 
 $sqlError
 
-This script's name is adp_load_barcodes.pl and is located at the default cron_scripts folder.
+This script's name is scan_compliance_stats.pl and is located at the default cron_scripts folder.
 
 EOF
 `;
 }
-
-
-$day=sprintf('%02d',((localtime())[6]));
-$day= int($day);
-
-if ($day eq 0){
-`/usr/sbin/sendmail -t -i <<EOF
-To:CANPARDatabaseAdministratorsStaffList\@canpar.com;jim_pepper\@canpar.com;Glenn.McFarlane\@loomis-express.com
-Subject: Reminder: adp_load_barcodes is still running.
-
-This is just to remind you that this is still running. Should we disable it?
-
-EOF
-`;
-}else{
-print "Not emailing, because today is not Sunday \n";
+else{
+print $sqlError."\n";
 }
+#rleandro
+#CANPARDatabaseAdministratorsStaffList

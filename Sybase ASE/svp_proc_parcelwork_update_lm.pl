@@ -144,7 +144,7 @@ select \@run_date = max(inserted_on_cons) from svp_parcel
 select \"Deleting for following date\:\", \@run_date
 delete svp_records where date_inserted >= \@run_date
 delete svp_messages where inserted_on_cons > convert(datetime,convert(date,getdate()))
-delete svp_parcel from svp_parcel where inserted_on_cons >= \@run_date
+delete svp_parcel from svp_parcel (index idx5) where inserted_on_cons >= \@run_date
 go
 exit
 EOF
@@ -255,7 +255,7 @@ select \@run_date = max(inserted_on_cons) from svp_parcel
 select \"Deleting for following date\:\", \@run_date
 delete svp_records where date_inserted >= \@run_date
 delete svp_messages where inserted_on_cons > convert(datetime,convert(date,getdate()))
-delete svp_parcel from svp_parcel where inserted_on_cons >= \@run_date
+delete svp_parcel from svp_parcel (index idx5) where inserted_on_cons >= \@run_date
 go
 exit
 EOF

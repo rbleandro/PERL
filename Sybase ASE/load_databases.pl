@@ -40,18 +40,62 @@ $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
 go
+exec master.dbo.rp_kill_db_processes 'shippingws'
+go
+declare \@count tinyint
+declare \@dbname varchar(100)
+set \@dbname='shippingws'
+select \@count=count(*) FROM master.dbo.sysprocesses sp where 1=1 and DB_NAME(sp.dbid) = \@dbname and cmd = 'DUMP DATABASE'
+while \@count>0
+begin
+waitfor delay '00:05:00'
+select \@count=count(*) FROM master.dbo.sysprocesses sp where 1=1 and DB_NAME(sp.dbid) = \@dbname and cmd = 'DUMP DATABASE'
+end
 load database shippingws from "/opt/sap/db_backups/shippingws.dmp" 
 go
 online database shippingws
 go
+exec master.dbo.rp_kill_db_processes 'canshipws'
+go
+declare \@count tinyint
+declare \@dbname varchar(100)
+set \@dbname='canshipws'
+select \@count=count(*) FROM master.dbo.sysprocesses sp where 1=1 and DB_NAME(sp.dbid) = \@dbname and cmd = 'DUMP DATABASE'
+while \@count>0
+begin
+waitfor delay '00:05:00'
+select \@count=count(*) FROM master.dbo.sysprocesses sp where 1=1 and DB_NAME(sp.dbid) = \@dbname and cmd = 'DUMP DATABASE'
+end
 load database canshipws from "/opt/sap/db_backups/canshipws.dmp" 
 go
 online database canshipws
 go
+exec master.dbo.rp_kill_db_processes 'uss'
+go
+declare \@count tinyint
+declare \@dbname varchar(100)
+set \@dbname='uss'
+select \@count=count(*) FROM master.dbo.sysprocesses sp where 1=1 and DB_NAME(sp.dbid) = \@dbname and cmd = 'DUMP DATABASE'
+while \@count>0
+begin
+waitfor delay '00:05:00'
+select \@count=count(*) FROM master.dbo.sysprocesses sp where 1=1 and DB_NAME(sp.dbid) = \@dbname and cmd = 'DUMP DATABASE'
+end
 load database uss from "/opt/sap/db_backups/uss.dmp" 
 go
 online database uss
 go
+exec master.dbo.rp_kill_db_processes 'termexp'
+go
+declare \@count tinyint
+declare \@dbname varchar(100)
+set \@dbname='termexp'
+select \@count=count(*) FROM master.dbo.sysprocesses sp where 1=1 and DB_NAME(sp.dbid) = \@dbname and cmd = 'DUMP DATABASE'
+while \@count>0
+begin
+waitfor delay '00:05:00'
+select \@count=count(*) FROM master.dbo.sysprocesses sp where 1=1 and DB_NAME(sp.dbid) = \@dbname and cmd = 'DUMP DATABASE'
+end
 load database termexp from "/opt/sap/db_backups/termexp.dmp" 
 go
 online database termexp

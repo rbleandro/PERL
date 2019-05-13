@@ -29,6 +29,10 @@ print "standby server \n";
 use Sys::Hostname;
 $prodserver = hostname();
 
+if ($prodserver eq "cpsybtest2.canpar.com"){
+$prodserver = "CPSYBTEST";
+}
+
 open(ERRORLOG,"</opt/sap/ASE-16_0/install/$prodserver.log") or die "Can't open the file /opt/sap/ASE-16_0/install/$prodserver.log: $!\n\n";
 #open(ERRORLOG,"</opt/sap/ASE-16_0/install/CPDB2_last_night.log") or die "Can't open the file\n\n";
 

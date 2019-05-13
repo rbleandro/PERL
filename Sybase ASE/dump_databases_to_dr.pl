@@ -7,7 +7,7 @@
 #Revision:                                                                   		#
 #Date           Name            Description                                  		#
 #-----------------------------------------------------------------------------------#
-#Jan 7 2019		Rafael Bahia	Created					 				     		#
+#Fev 13 2019		Rafael Bahia	Created					 				     		#
 #####################################################################################
 
 #Usage Restrictions
@@ -24,14 +24,7 @@ use Sys::Hostname;
 $prodserver = hostname();
 $drserver = 'CPDB4';
 
-if (hostname() eq 'CPDB4') {
-	print "DR server \n";
-    die "This is the DR server. No additional logic will be processed until the primary servers are back online.\n"
-}
-
-if ($prodserver eq 'CPDB2'){ $stbyserver = 'CPDB1'; } else { $stbyserver = 'CPDB2'; }
-
-print "Prod: $prodserver....Stby: $stbyserver \n";
+print "Prod: $prodserver....Dr: $drserver \n";
 
 $database = $ARGV[0];
 
@@ -49,7 +42,7 @@ $startHour=sprintf('%02d',((localtime())[2]));
 $startMin=sprintf('%02d',((localtime())[1]));
 
 $my_pid = getppid();
-$isProcessRunning =`ps -ef|grep sybase|grep dump_databases_to_stdby.pl|grep -v grep|grep -v $my_pid|grep -v "vim dump_databases_to_stdby.pl"|grep -v "less dump_databases_to_stdby.pl"`;
+$isProcessRunning =`ps -ef|grep sybase|grep dump_databases_to_dr.pl|grep -v grep|grep -v $my_pid|grep -v "vim dump_databases_to_dr.pl"|grep -v "less dump_databases_to_dr.pl"`;
 
 #print "My pid: $my_pid\n";
 print "Running: $isProcessRunning \n";
@@ -80,7 +73,7 @@ $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
-Subject: Errors - dump_databases_to_stdby at $finTime
+Subject: Errors - dump_databases_to_dr at $finTime
 
 $sqlError
 EOF
@@ -88,30 +81,12 @@ EOF
 die;
 }
 
-#Copying files to standby server
-$scpError=`scp -p /home/sybase/db_backups/$database.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
+#Copying files to dr server
+$scpError=`scp -p /home/sybase/db_backups/$database.dmp sybase\@$drserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
-#$scpError=`scp -p /home/sybase/db_backups/mpr_data_lm.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
-#print "$scpError\n";
-
-
-#Copying files to DR server
-#$scpError=`scp -p /home/sybase/db_backups/$database.dmp sybase\@$drserver:/opt/sap/db_backups`;
-#print "$scpError\n";
-
-#$scpError=`scp -p /home/sybase/db_backups/mpr_data_lm.dmp sybase\@$drserver:/opt/sap/db_backups`;
-#print "$scpError\n";
-
-
-###############################
-#Run load in standby server now
-###############################
-
-#Loading databases into standby server
-$load_msgs = `ssh $stbyserver /opt/sap/cron_scripts/load_databases_to_stdby.pl $database $mail`;
-#Loading databases into DR server
-#$load_msgs_dr = `ssh $drserver /opt/sap/cron_scripts/load_databases_mpr.pl $drserver`;
+#Loading databases into dr server
+$load_msgs = `ssh $drserver /opt/sap/cron_scripts/load_databases_to_dr.pl $database $mail`;
 
 print "$load_msgs \n";
 #print "$load_msgs_dr \n";

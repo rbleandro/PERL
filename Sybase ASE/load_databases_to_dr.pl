@@ -19,7 +19,7 @@ if (defined $dba) {
     $mail='CANPARDatabaseAdministratorsStaffList';
 } 
 
-$prodserver='CPDB1';
+$prodserver='CPDB4';
 
 print "Server Being Loaded: $prodserver\n";
 
@@ -30,7 +30,7 @@ $startHour=sprintf('%02d',((localtime())[2]));
 $startMin=sprintf('%02d',((localtime())[1]));
 
 $my_pid = getppid();
-$isProcessRunning =`ps -ef|grep sybase|grep load_databases_to_stdby.pl|grep -v grep|grep -v $my_pid|grep -v "vim load_databases_to_stdby.pl"|grep -v "less load_databases_to_stdby.pl"`;
+$isProcessRunning =`ps -ef|grep sybase|grep load_databases_to_dr.pl|grep -v grep|grep -v $my_pid|grep -v "vim load_databases_to_dr.pl"|grep -v "less load_databases_to_dr.pl"`;
 
 #print "My pid: $my_pid\n";
 print "Running: $isProcessRunning \n";
@@ -71,7 +71,7 @@ $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
-Subject: Errors - load_databases_to_stdby at $finTime
+Subject: Errors - load_databases_to_dr at $finTime
 
 $sqlError
 EOF
@@ -83,7 +83,7 @@ print "Time Finished: $finTime\n";
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
-Subject: Success - load_databases_to_stdby for $database at $finTime
+Subject: Success - load_databases_to_dr for $database at $finTime
 
 $sqlError
 EOF

@@ -70,6 +70,7 @@ go
 exit
 EOF
 `;
+
 if ($sqlError =~ /Msg/ || $sqlError =~ /Possible Issue Found/){
 print $sqlError."\n";
 
@@ -77,7 +78,7 @@ $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Errors - dump_databases at $finTime
+Subject: Errors - dump_databases at $finTime during dump phase
 
 $sqlError
 EOF
@@ -87,29 +88,140 @@ die;
 
 #Copying files to standby server
 $scpError=`scp -p /home/sybase/db_backups/shippingws.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
-print "$scpError\n";
+
+if ($scpError =~ /No space left/ || $scpError =~ /Possible Issue Found/){
+print $scpError."\n";
+
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+Subject: Errors - dump_databases at $finTime during copy to stdby stage
+
+$scpError
+EOF
+`;
+die;
+}
 
 $scpError=`scp -p /home/sybase/db_backups/uss.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
-print "$scpError\n";
+
+if ($scpError =~ /No space left/ || $scpError =~ /Possible Issue Found/){
+print $scpError."\n";
+
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+Subject: Errors - dump_databases at $finTime during copy to stdby stage
+
+$scpError
+EOF
+`;
+die;
+}
 
 $scpError=`scp -p /home/sybase/db_backups/canshipws.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
-print "$scpError\n";
 
+if ($scpError =~ /No space left/ || $scpError =~ /Possible Issue Found/){
+print $scpError."\n";
+
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+Subject: Errors - dump_databases at $finTime during copy to stdby stage
+
+$scpError
+EOF
+`;
+die;
+}
 $scpError=`scp -p /home/sybase/db_backups/termexp.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
-print "$scpError\n";
+
+if ($scpError =~ /No space left/ || $scpError =~ /Possible Issue Found/){
+print $scpError."\n";
+
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+Subject: Errors - dump_databases at $finTime during copy to stdby stage
+
+$scpError
+EOF
+`;
+die;
+}
 
 #Copying files to DR server
 $scpError=`scp -p /home/sybase/db_backups/shippingws.dmp sybase\@$drserver:/opt/sap/db_backups`;
-print "$scpError\n";
+
+if ($scpError =~ /No space left/ || $scpError =~ /Possible Issue Found/){
+print $scpError."\n";
+
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+Subject: Errors - dump_databases at $finTime during copy to DR stage
+
+$scpError
+EOF
+`;
+die;
+}
 
 $scpError=`scp -p /home/sybase/db_backups/uss.dmp sybase\@$drserver:/opt/sap/db_backups`;
-print "$scpError\n";
+
+if ($scpError =~ /No space left/ || $scpError =~ /Possible Issue Found/){
+print $scpError."\n";
+
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+Subject: Errors - dump_databases at $finTime during copy to DR stage
+
+$scpError
+EOF
+`;
+die;
+}
 
 $scpError=`scp -p /home/sybase/db_backups/canshipws.dmp sybase\@$drserver:/opt/sap/db_backups`;
-print "$scpError\n";
+
+if ($scpError =~ /No space left/ || $scpError =~ /Possible Issue Found/){
+print $scpError."\n";
+
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+Subject: Errors - dump_databases at $finTime during copy to DR stage
+
+$scpError
+EOF
+`;
+die;
+}
 
 $scpError=`scp -p /home/sybase/db_backups/termexp.dmp sybase\@$drserver:/opt/sap/db_backups`;
-print "$scpError\n";
+
+if ($scpError =~ /No space left/ || $scpError =~ /Possible Issue Found/){
+print $scpError."\n";
+
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+Subject: Errors - dump_databases at $finTime during copy to DR stage
+
+$scpError
+EOF
+`;
+die;
+}
 
 ###############################
 #Run load in standby server now
@@ -117,11 +229,37 @@ print "$scpError\n";
 
 #Loading databases into standby server
 $load_msgs = `ssh $stbyserver /opt/sap/cron_scripts/load_databases.pl $stbyserver`;
+
+if ($load_msgs =~ /Msg/ || $load_msgs =~ /Possible Issue Found/){
+print $load_msgs."\n";
+
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+Subject: Errors - dump_databases at $finTime during load stage
+
+$load_msgs
+EOF
+`;
+}
+
 #Loading databases into DR server
 $load_msgs_dr = `ssh $drserver /opt/sap/cron_scripts/load_databases.pl $drserver`;
 
-print "$load_msgs \n";
-print "$load_msgs_dr \n";
+if ($load_msgs_dr =~ /Msg/ || $load_msgs_dr =~ /Possible Issue Found/){
+print $load_msgs_dr."\n";
+
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+Subject: Errors - dump_databases at $finTime during load stage
+
+$load_msgs_dr
+EOF
+`;
+}
 
 $finTime = localtime();
 print "Time Finished: $finTime\n";

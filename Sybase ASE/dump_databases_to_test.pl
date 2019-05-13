@@ -2,16 +2,24 @@
 
 #Usage Restrictions
 if ($#ARGV < 1){
-   print "Usage: dump_databases_to_test.pl originDB destDB \n";
+   print "Usage: dump_databases_to_test.pl originDB destDB rleandro\@canpar.com 1\n";
    die "Script Executed With Wrong Number Of Arguments\n";
 }
 
+my $option = $ARGV[3];
 my $dba = $ARGV[2];
+
 if (defined $dba) {
     $mail=$dba;
 } else {
     $mail='CANPARDatabaseAdministratorsStaffList';
-} 
+}
+
+if (defined $option) {
+    $option=$option;
+} else {
+    $option=0;
+}
 
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
 while (<PROD>){
@@ -53,6 +61,7 @@ $deleteoldfiles =`sudo find /home/sybase/db_backups/ -mindepth 1 -mtime +60 -del
 $originDB = $ARGV[0];
 $destDB = $ARGV[1];
 
+
 $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
@@ -81,15 +90,16 @@ die;
 $scpError=`scp -p /home/sybase/db_backups/$originDB.dmp sybase\@$testserver:/home/sybase/db_backups`;
 print "$scpError\n";
 
-
-###############################
-#Run load in TEST server now
-###############################
+if ($option == 1){
 
 #Loading databases into TEST server
 $load_msgs = `ssh $testserver /opt/sap/cron_scripts/load_databases_to_test.pl $originDB $destDB $mail`;
 
 print "$load_msgs \n";
+}
+else {
+print "Database was dumped and the file copied to the destination server but Load was not processed. Do it manually.\n"
+}
 
 $finTime = localtime();
 print "Time Finished: $finTime\n";
