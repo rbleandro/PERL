@@ -61,10 +61,20 @@
 #}
 
 #Setting Time
-$currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-$startMin=sprintf('%02d',((localtime())[1]));
-my($day, $month, $year)=(localtime)[3,4,5];
-#print "$day-".($month+1)."-".($year+1900)."\n";
-$today=($year+1900)."-".($month+1)."-".$day;
-$mv_msg = `sudo mv /opt/sap/bcp_data/mpr_data/mpr_payroll/MPR_Export_Hourly_Payroll.xlsx /opt/sap/bcp_data/mpr_data/mpr_payroll/backup/MPR_Export_Hourly_Payroll_$today.xlsx 2>&1`;
+# $currTime = localtime();
+# $startHour=sprintf('%02d',((localtime())[2]));
+# $startMin=sprintf('%02d',((localtime())[1]));
+# my($day, $month, $year)=(localtime)[3,4,5];
+# #print "$day-".($month+1)."-".($year+1900)."\n";
+# $today=($year+1900)."-".($month+1)."-".$day;
+# $mv_msg = `sudo mv /opt/sap/bcp_data/mpr_data/mpr_payroll/MPR_Export_Hourly_Payroll.xlsx /opt/sap/bcp_data/mpr_data/mpr_payroll/backup/MPR_Export_Hourly_Payroll_$today.csv 2>&1`;
+
+$scpError=`scp -p /home/sybase/db_backups/shippingws.dmp sybase\@10.3.1.165:/home/sybase/db_backups`;
+#print "$scpError\n";
+
+$scpError  = $? >> 8;
+if ($scpError != 0) 
+	{print "Sending of file NO\n";}
+	else 
+	{print "Sending of file DONE\n";}
+	

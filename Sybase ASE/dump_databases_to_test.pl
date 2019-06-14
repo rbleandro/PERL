@@ -1,5 +1,18 @@
 #!/usr/bin/perl -w
 
+
+#Description:	This script will dump the database on production, copy the file to the test server and 
+#				load it there, sending an email with the outcome at the end.
+#
+#Author:		Rafael Bahia
+#Revision:
+#Date           Name            Description
+#---------------------------------------------------------------------------------
+#May 01 2018	Rafael Bahia	Originally created
+#Mar 30 2019	Rafael Bahia	Added parameter validation and email recipient customization
+#Apr 03 2019	Rafael Bahia	Changed the script to allow the execution of more than one instance
+#May 29 2019	Rafael Bahia	Added error handling for the scp phase
+
 #Usage Restrictions
 if ($#ARGV < 1){
    print "Usage: dump_databases_to_test.pl originDB destDB rleandro\@canpar.com 1\n";
@@ -61,7 +74,6 @@ $deleteoldfiles =`sudo find /home/sybase/db_backups/ -mindepth 1 -mtime +60 -del
 $originDB = $ARGV[0];
 $destDB = $ARGV[1];
 
-
 $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
@@ -89,6 +101,21 @@ die;
 #Copying files to TEST server
 $scpError=`scp -p /home/sybase/db_backups/$originDB.dmp sybase\@$testserver:/home/sybase/db_backups`;
 print "$scpError\n";
+
+$scpError  = $? >> 8;
+if ($scpError != 0) {
+print "$scpError\n";
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: $mail\@canpar.com
+Subject: Errors - dump_databases_to_test (scp phase) at $finTime
+
+$scpError
+EOF
+`;
+die;
+}
 
 if ($option == 1){
 

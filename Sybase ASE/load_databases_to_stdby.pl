@@ -1,14 +1,24 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Script:   This script checks SVP URL delays                                 #
-#                                                                            #
-#Author:	Rafael Bahia												     #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#Jan 7 2019		Rafael Bahia	Created					 				     #
-##############################################################################
+#Script:   This script loads a database to the standby server
+#
+#Author:	Rafael Bahia
+#Revision:
+#Date           	Name            Description
+#----------------------------------------------------------------------------
+#Jan 7  2019		Rafael Bahia	Created
+#May 16 2019		Rafael Bahia	Added usage restrictions
+
+#Usage Restrictions
+open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
+while (<PROD>){
+@prodline = split(/\t/, $_);
+$prodline[1] =~ s/\n//g;
+}
+if ($prodline[1] eq "1" ){
+	print "production server \n";
+    die "This is the production server. Can't run this here.\n";
+}
 
 $database = $ARGV[0];
 

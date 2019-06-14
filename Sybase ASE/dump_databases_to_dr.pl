@@ -85,6 +85,21 @@ die;
 $scpError=`scp -p /home/sybase/db_backups/$database.dmp sybase\@$drserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
+$scpError  = $? >> 8;
+if ($scpError != 0) {
+print "$scpError\n";
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: $mail\@canpar.com
+Subject: Errors - dump_databases_to_test (scp phase) at $finTime
+
+$scpError
+EOF
+`;
+die;
+}
+
 #Loading databases into dr server
 $load_msgs = `ssh $drserver /opt/sap/cron_scripts/load_databases_to_dr.pl $database $mail`;
 

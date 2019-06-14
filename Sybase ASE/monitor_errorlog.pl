@@ -1,21 +1,20 @@
 #!/usr/bin/perl -w
 
-###################################################################################
-#Script:   This script monitors sybase server errorlog for critical and fatal     #
-#          errors. It is designed to run every minute and scan the errorlog and   #
-#          send messages when errors are found. It also monitors whether the      #
-#          CPDB1 server and Backup server is up                                 #
-#                                                                                 #
-#Author:   Amer Khan                                                              #
-#Revision:                                                                        #
-#Date           Name            Description                                       #
-#---------------------------------------------------------------------------------#
-#01/07/04       Amer Khan       Originally created                                #
-#                                                                                 #
-#02/23/06      Ahsan Ahmed      Modified for email to DBA's and documentation     #  
-#11/01/07       Ahsan Ahmed     Modified                                          #
-#                                                                                 #
-###################################################################################
+#Script:   This script monitors sybase server errorlog for critical and fatal
+#          errors. It is designed to run every minute and scan the errorlog and
+#          send messages when errors are found. It also monitors whether the
+#          CPDB1 server and Backup server is up
+#
+#Author:   Amer Khan
+#Revision:
+#Date           Name            Description
+#------------------------------------------------------------------------------
+#01/07/04       Amer Khan       Originally created
+#
+#02/23/06       Ahsan Ahmed      Modified for email to DBA's and documentation
+#11/01/07       Ahsan Ahmed      Modified
+#
+
 
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
 while (<PROD>){
@@ -29,10 +28,6 @@ print "standby server \n";
 use Sys::Hostname;
 $prodserver = hostname();
 
-if ($prodserver eq "cpsybtest2.canpar.com"){
-$prodserver = "CPSYBTEST";
-}
-
 open(ERRORLOG,"</opt/sap/ASE-16_0/install/$prodserver.log") or die "Can't open the file /opt/sap/ASE-16_0/install/$prodserver.log: $!\n\n";
 #open(ERRORLOG,"</opt/sap/ASE-16_0/install/CPDB2_last_night.log") or die "Can't open the file\n\n";
 
@@ -40,15 +35,6 @@ open(ERRORLOG,"</opt/sap/ASE-16_0/install/$prodserver.log") or die "Can't open t
 $currDate=((localtime())[5]+1900)."/".sprintf('%02d',((localtime())[4]+1))."/".sprintf('%02d',((localtime())[3]));
 $currHour=sprintf('%02d',((localtime())[2]));
 $currMin =sprintf('%02d',((localtime())[1]-1)); #Subtract one to check the past minute
-
-#Testing...remove after done, Amer
-#Testing code starts
-
-#$currHour = '09';
-#$currMin = '36';
-
-#Testing code ends
-
 
 #what if the minute is 00, the result would be -1 instead of 59, correcting that
 if($currMin == "-1"){
@@ -75,7 +61,7 @@ while (<ERRORLOG>){
       print "$firstLine$secondLine\n";
       if(($tooManyErrors < 5 ) && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/)){
       print "Error Found\n";
-      
+
    `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
 Subject: $prodserver Error Alert
@@ -85,11 +71,11 @@ $firstLine$secondLine
 EOF
 `;
 print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
- 
+
       }else{
          if (($firstLine =~ /Login failed/)){
             #Send a message to Linux syslog about the failed login if login has failed more than 10 times within
-	    # an hour, irrespective of if there was a successful login within those failed logins in that hour
+			# an hour, irrespective of if there was a successful login within those failed logins in that hour
             $failedLogin = $firstLine;
             $failedLogin =~ s/(^.+User\:\s)(.+)(,.+$)(\n)/$2/;
             #print "My failed login:$failedLogin\n";
@@ -192,7 +178,7 @@ print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
 if($getNextLine == 1){
       $tooManyErrors += 1;
       print "$firstLine\n";
-      if(($tooManyErrors < 5 ) ){#&& ($firstLine !~ /Deadlock/)){
+      if(($tooManyErrors < 5)){#&& ($firstLine !~ /Deadlock/)){
       print "Error Found\n";
          if ($firstLine !~ /Login failed/){
       `/usr/sbin/sendmail -t -i <<EOF
@@ -220,7 +206,7 @@ print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
                   $fileLine = "$failedLogin\t0\t$currHour";
                   `rm /tmp/failedLogin/$failedLogin`;
                   die "Incident Has Been Reported!!\n";
-               }else{ 
+               }else{
                   $currCount = $loginArray[1];
                   if ($loginArray[2] == $currHour){
                      $currCount += 1;

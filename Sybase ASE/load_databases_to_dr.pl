@@ -1,14 +1,24 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Script:   This script checks SVP URL delays                                 #
-#                                                                            #
-#Author:	Rafael Bahia												     #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#Jan 7 2019		Rafael Bahia	Created					 				     #
-##############################################################################
+#Script:   This script loads a database to the DR server
+#
+#Author:	Rafael Bahia
+#Revision:
+#Date           	Name            Description
+#----------------------------------------------------------------------------
+#Jan 7  2019		Rafael Bahia	Created
+#May 16 2019		Rafael Bahia	Added usage restrictions
+
+#Usage Restrictions
+open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
+while (<PROD>){
+@prodline = split(/\t/, $_);
+$prodline[1] =~ s/\n//g;
+}
+if ($prodline[1] eq "1" ){
+	print "production server \n";
+    die "This is the production server. Can't run this here.\n";
+}
 
 $database = $ARGV[0];
 
@@ -17,7 +27,7 @@ if (defined $dba) {
     $mail=$dba;
 } else {
     $mail='CANPARDatabaseAdministratorsStaffList';
-} 
+}
 
 $prodserver='CPDB4';
 
@@ -51,7 +61,7 @@ $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
 go
-load database $database from "/opt/sap/db_backups/$database.dmp" 
+load database $database from "/opt/sap/db_backups/$database.dmp"
 go
 online database $database
 go

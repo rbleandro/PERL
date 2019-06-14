@@ -92,17 +92,20 @@ die;
 $scpError=`scp -p /home/sybase/db_backups/$database.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
-#$scpError=`scp -p /home/sybase/db_backups/mpr_data_lm.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
-#print "$scpError\n";
+$scpError  = $? >> 8;
+if ($scpError != 0) {
+print "$scpError\n";
+$finTime = localtime();
 
+`/usr/sbin/sendmail -t -i <<EOF
+To: $mail\@canpar.com
+Subject: Errors - dump_databases_to_test (scp phase) at $finTime
 
-#Copying files to DR server
-#$scpError=`scp -p /home/sybase/db_backups/$database.dmp sybase\@$drserver:/opt/sap/db_backups`;
-#print "$scpError\n";
-
-#$scpError=`scp -p /home/sybase/db_backups/mpr_data_lm.dmp sybase\@$drserver:/opt/sap/db_backups`;
-#print "$scpError\n";
-
+$scpError
+EOF
+`;
+die;
+}
 
 ###############################
 #Run load in standby server now
