@@ -1,14 +1,16 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Script:   This script checks SVP URL delays                                 #
-#                                                                            #
-#Author:	Amer Khan						     #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#Oct 12 2016	Amer Khan	Created					     #
-##############################################################################
+##########################################################################################################################################################
+#Script:   This script checks SVP URL delays
+#
+#Author:	Amer Khan
+#Revision:
+#Date           Name            Description
+#----------------------------------------------------------------------------
+#Oct  12 2016	Amer Khan		Created
+#July 01 2018	Rafael Leandro	Added logic to copy and load the databases on DR (CPDB4)
+#Aug  01 2019	Rafael Leandro	Added logic to dynamically setup the backup folder since they are not consistent accross the servers.
+###########################################################################################################################################################
 
 #Usage Restrictions
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
@@ -29,7 +31,7 @@ if (hostname() eq 'CPDB4') {
     die "This is the DR server. No additional logic will be processed until the primary servers are back online.\n"
 }
 
-if ($prodserver eq 'CPDB2'){ $stbyserver = 'CPDB1'; } else { $stbyserver = 'CPDB2'; }
+if ($prodserver eq 'CPDB2'){ $stbyserver = 'CPDB1'; $lbkpdir='/opt/sap'; $rbkpdir='/opt/sap';} else { $stbyserver = 'CPDB2'; $lbkpdir='/opt/sap'; $rbkpdir='/opt/sap';}
 
 print "Prod: $prodserver....Stby: $stbyserver \n";
 
@@ -59,9 +61,9 @@ $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
 go
-dump database mpr_data to "/home/sybase/db_backups/mpr_data.dmp" compression=100
+dump database mpr_data to "$lbkpdir/db_backups/mpr_data.dmp" compression=100
 go
-dump database mpr_data_lm to "/home/sybase/db_backups/mpr_data_lm.dmp" compression=100
+dump database mpr_data_lm to "$lbkpdir/db_backups/mpr_data_lm.dmp" compression=100
 go
 exit
 EOF
@@ -82,18 +84,18 @@ die;
 }
 
 #Copying files to standby server
-$scpError=`scp -p /home/sybase/db_backups/mpr_data.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
+$scpError=`scp -p $lbkpdir/db_backups/mpr_data.dmp sybase\@$stbyserver:$rbkpdir/db_backups`;
 print "$scpError\n";
 
-$scpError=`scp -p /home/sybase/db_backups/mpr_data_lm.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
+$scpError=`scp -p $lbkpdir/db_backups/mpr_data_lm.dmp sybase\@$stbyserver:$rbkpdir/db_backups`;
 print "$scpError\n";
 
 
 #Copying files to DR server
-$scpError=`scp -p /home/sybase/db_backups/mpr_data.dmp sybase\@$drserver:/opt/sap/db_backups`;
+$scpError=`scp -p $lbkpdir/db_backups/mpr_data.dmp sybase\@$drserver:$lbkpdir/db_backups`;
 print "$scpError\n";
 
-$scpError=`scp -p /home/sybase/db_backups/mpr_data_lm.dmp sybase\@$drserver:/opt/sap/db_backups`;
+$scpError=`scp -p $lbkpdir/db_backups/mpr_data_lm.dmp sybase\@$drserver:$lbkpdir/db_backups`;
 print "$scpError\n";
 
 

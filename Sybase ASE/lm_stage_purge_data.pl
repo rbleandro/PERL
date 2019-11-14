@@ -1,15 +1,14 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Description:	All data in the reference tables is purged, which is over    #
-#		over a week old in lm_stage.                                 #
-#Author:    Amer Khan							     #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#Jun 12	2013	Amer Khan 	Originally created                           #
-#                                                                            #
-##############################################################################
+#Description:	Deletes old data from auxiliary tables in lm_stage database.
+#Author:    	Amer Khan
+#Revision:
+#Date           Name            Description
+#------------------------------------------------------------------------------------------------------
+#Jun 12	2013	Amer Khan 		Originally created
+#Sep 01	2019	Rafael Leandro	Modified to call a procedure to cleanup the ev_event table. 
+#								The proc will cleanup the table in several small transactions to prevent locks in the database and reduce replication stress
+
 
 #Usage Restrictions
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
@@ -50,8 +49,8 @@ delete tttl_ps_pickup_shipper where updated_on_cons < dateadd(dd,-40,getdate())
 go
 delete tttl_pt_pickup_totals where updated_on_cons < dateadd(dd,-40,getdate())
 go
-delete lm_stage..tttl_ev_event where inserted_on_cons < dateadd(dd,-40,getdate())
-go   
+exec purge_tttl_ev_event
+go
 exit
 EOF
 `;
@@ -59,7 +58,7 @@ print $sqlError."\n";
 
 $currTime = localtime();
 
-if($sqlError =~ /no|not|Msg/){
+if($sqlError =~ /Msg/){
       print "Errors may have occurred during update...\n\n";
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com

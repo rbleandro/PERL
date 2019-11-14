@@ -42,7 +42,7 @@ $startMin=sprintf('%02d',((localtime())[1]));
 print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 #Cleaning up the backup volume to free space (deletes all files older than 7 days)
-`sudo find /home/sybase/db_backups/ -mindepth 1 -mtime +60 -delete`;
+`sudo find /opt/sap/db_backups/ -mindepth 1 -mtime +60 -delete`;
 
 $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
@@ -50,7 +50,7 @@ use master
 go
 exec rp_kill_db_processes '$destDB'
 go
-load database $destDB from "/home/sybase/db_backups/$originDB.dmp" 
+load database $destDB from "/opt/sap/db_backups/$originDB.dmp" 
 go
 online database $destDB
 go

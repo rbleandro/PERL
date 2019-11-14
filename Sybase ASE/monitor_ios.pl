@@ -1,74 +1,143 @@
 #!/usr/bin/perl
 
-###################################################################################
-#Script:   This script monitors IOS over 1000000                                  #
-#                                                                                 #
-#Author:   Ahsan Ahmed                                                            #
-#Revision:                                                                        #
-#Date		Name		Description                                       #
-#---------------------------------------------------------------------------------#
-#11/01/07      Ahsan Ahmed      Modified
-###################################################################################
+#Script:   	This script monitors IOS over 1000000
+#
+#Author:   	Ahsan Ahmed
+#Revision:
+#Date			Name			Description
+#---------------------------------------------------------------------------------
+#11/01/07   	Ahsan Ahmed     Modified
+#Aug 16 2019	Rafael Leandro	1.Completely revamped to add flags and parameters.
+#								2.Also added support for html for the final email alert. The final alert is also much cleaner.
+#								3.The script now shows all the sessions doing large IO instead of just one.
 
 #Usage Restrictions
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod") or die "Can't open < /opt/sap/cron_scripts/passwords/check_prod : $!";
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
-#Setting Sybase environment is set properly
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $finTime = localtime();
+my @prodline="";
+my $tio=100000;
 
-#Initialize vars
+GetOptions(
+    'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'threshold|t=i' => \$tio
+) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --threshold|t 100000\n";
 
-#Cleanup previous files...
-$startHour=sprintf('%02d',((localtime())[2]));
-
-if ($startHour eq '14'){
-   `cd /tmp
-ls \| grep \^io_\* \| xargs rm`;
+if ($skipcheckprod == 0){
+	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
+	while (<PROD>){
+		@prodline = split(/\t/, $_);
+		$prodline[1] =~ s/\n//g;
+	}
+	close PROD;
+	if ($prodline[1] eq "0" ){
+		print "standby server \n";
+		die "This is a stand by server\n";
+	}
 }
 
+my $prodserver = hostname();
+my $tiosec=$tio*2;
+#print $tiosec . "\n";
 
-#Execute IO Monitoring 
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
 
-$error = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b<<EOF 2>&1
+#Execute IO Monitoring
+
+my $error = `. /opt/sap/SYBASE.sh
+isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -b<<EOF 2>&1
 set nocount on
-set rowcount 1
-select '|',physical_io,'|',suser_name(suid),'|',spid,'|',program_name,'|',clientapplname,'|',clientname
-from sysprocesses where physical_io > 100000 and suid > 0 and status <> 'recv sleep' and suser_name(suid) not in ('sa','cwmaint','sybmaint','backup','ops3','ops1','DBA','crystal_reporter')
---from sysprocesses where physical_io > 300000 and suid > 0 and status <> 'recv sleep'
+go
+select spid,'#',DB_NAME(dbid) as 'database','#',isnull(execution_time/1000/60,-1) as execution_time,'#',status,'#',physical_io,'#',isnull(suser_name(suid),'Unknown') as username,'#',
+isnull(CASE clientapplname WHEN '' THEN program_name WHEN NULL THEN program_name ELSE clientapplname END,'Unknown') 'program','#',
+CASE clienthostname WHEN '' THEN isnull(hostname,ipaddr) WHEN NULL THEN isnull(hostname,ipaddr) ELSE clienthostname END 'host','#'
+,'exec sp_showplan('+cast(spid as varchar(100))+')' as getPlan,'#'
+,'dbcc sqltext('+cast(spid as varchar(100))+')' as getQuery
+from master..sysprocesses
+where physical_io > (case when clientapplname like 'rpt_%' then $tiosec else $tio end )
+and suid > 0
+and status <> 'recv sleep'
+and suser_name(suid) not in ('sa','sybmaint')
+--and cmd not like 'UPDATE STATISTICS%'
+and spid not in (select spid from dba.dbo.sessionWhiteList)
+order by physical_io desc
 go
 exit
 EOF
 `;
 
-print $error;
+if($error =~ /Msg/)
+{
+print $error . "\n";
+`/usr/sbin/sendmail -t -i <<EOF
+To: $mail\@canpar.com
+Subject: ERROR - monitor_ios script (get current blocks phase).
+$error
+EOF
+`;
+$finTime = localtime();
+print $finTime . "\n";
+die "Email sent\n";
+}
 
-$error =~ s/\s//g;
-$error =~ s/\t//g;
-@list = split(/\|/,$error);
-$io = $list[1];
-$user = $list[2];
-$spid = $list[3];
+$error=~s/\t//g;
+#$error=~s/\s//g;
 
-print "Here is the io: $io and name: $user spid:$spid \n";
-if ($io > 100000){
-   print "Large IO found by $user\n";
-   $error2 = `. /opt/sap/SYBASE.sh
+#print "$error\n";
+
+if ($error =~ /#/){
+
+my $htmlmail="<html>
+<head>
+<title>HTML E-mail</title>
+</head>
+<body>
+<p>Check below the list of sessions doing large IO. The following plan is for the heaviest session only. For more details about the other sessions, run dbcc sqltext and sp_showplan. Duration is shown in minutes.</p>
+
+<table border=\"1\">
+<tr><td>spid</td><td>database</td><td>duration</td><td>status</td><td>physical_io</td><td>username</td><td>program</td><td>host</td><td>getPlan</td><td>getQuery</td></tr>\n";
+my @results="";
+my $htmltable="";
+my $td="";
+my $io = 0;
+my $user = "";
+my $spid = 0;
+
+@results = split(/\n/,$error);
+
+for (my $i=0; $i <= $#results; $i++){
+	my @line = split(/#/,$results[$i]);
+	$htmltable.="<tr>\n";
+	for (my $l=0; $l <= $#line; $l++){
+		$td.="<td>" . $line[$l] . "</td>\n";
+		if ($i ==0){$spid=$line[0];$user=$line[5];}
+	}
+	$htmltable.=$td;
+	$htmltable.="</tr>\n";
+	$td="";
+}
+
+$htmlmail .= $htmltable . "</table>\n";
+
+if ($spid == 0) {die "Could not find spid\n";}
+
+my $error2 = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b -w400<<EOF 2>&1
-dbcc traceon(3604)
+set nocount on
+set proc_return_status off
 go
-dbcc sqltext($spid)
+dbcc traceon(3604) dbcc sqltext($spid) dbcc traceoff(3604)
 go
-dbcc traceoff(3604)
+select '************************** END OF QUERY **************************'
 go
 sp_showplan $spid
 go
@@ -76,33 +145,65 @@ exit
 EOF
 `;
 
+if($error2 =~ /Msg/)
+{
 print $error2;
-
-@sql = split(/SQL Text:/,$error2);
-
-@final_sql = split(/DBCC/,$sql[1]);
-
-$showSQL = $final_sql[0];
-
-print "SQL RAN: $showSQL \n";
-
-   if (-e "/tmp/io_$user"){ }
-   else{
-      `touch /tmp/io_$user`;
-      `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Large IO Detected By $user!!!
-
-Large IO: $io found by $user
-******
-$error
-******
-SQL RAN:
+`/usr/sbin/sendmail -t -i <<EOF
+To: $mail\@canpar.com
+Subject: ERROR - monitor_ios script(get execution plans phase).
 $error2
-******
+EOF
+`;
+$finTime = localtime();
+print $finTime;
+die "Email sent";
+}
+
+$error2 =~ s/DBCC execution completed.*//g;
+$error2 =~ s/Subordinate SQL Text: //g;
+$error2 =~ s/SQL Text:.*//g;
+
+if ($error2 =~ /MERGE JOIN/ || $error2 =~ /Positioning at start/ || $error2 =~ /Table Scan/ || $error2 =~ /This step involves sorting/ || $error2 =~ /Positioning at index start/){
+	$htmlmail .= "<p><b><font color='red'>Heavy operations such as table scan or merge joins were detected in the execution plan. Review the query and the tables involved as soon as possible.</font></b></p>\n";
+}
+else
+{
+	$htmlmail .= "<p><b><font color='blue'>No heavy operations detected in the execution plan. You should still check if this query can be tunned, specially if it runs frequently during peak hours.</font></b></p>\n";
+}
+my $plandetails="";
+my $linecontrol=1;
+
+@results = split(/\n/,$error2);
+for (my $i=0; $i <= $#results; $i++){
+	if ($results[$i] =~ /\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* END OF QUERY \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*/){$plandetails.="<p>" . $results[$i] . "</p>"; $linecontrol=0;}
+	if ($results[$i] =~ /QUERY PLAN/){$linecontrol=1;}
+	if ($linecontrol==1){
+		if ($results[$i] =~ /MERGE JOIN/ || $results[$i] =~ /Positioning at start/ || $results[$i] =~ /Table Scan/ || $results[$i] =~ /This step involves sorting/ || $results[$i] =~ /Positioning at index start/){
+			$plandetails.="<p style=\"background-color: #FF0000\"><font color='white'>" . $results[$i] . "</font></p>";
+		}else{
+			$plandetails.="<p>" . $results[$i] . "</p>";
+		}
+		
+	}else{
+		next;
+	}
+}
+
+$htmlmail .= $plandetails . "</body></html>\n";
+
+#print $htmlmail . "\n";
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: $mail\@canpar.com
+Subject: Large IO Detected By $user!!!
+Content-Type: text/html
+MIME-Version: 1.0
+
+$htmlmail
 EOF
 `;
 }
-   }
-
-
+else{
+$finTime = localtime();
+print "No high IOs at $finTime\n";
+}

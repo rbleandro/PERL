@@ -5,15 +5,14 @@
 #          send messages when errors are found. It also monitors whether the
 #          CPDB1 server and Backup server is up
 #
-#Author:   Amer Khan
+#Author:   		Amer Khan
 #Revision:
 #Date           Name            Description
 #------------------------------------------------------------------------------
-#01/07/04       Amer Khan       Originally created
-#
-#02/23/06       Ahsan Ahmed      Modified for email to DBA's and documentation
-#11/01/07       Ahsan Ahmed      Modified
-#
+#01/07/04       Amer Khan       	Originally created
+#02/23/06       Ahsan Ahmed      	Modified for email to DBA's and documentation
+#11/01/07       Ahsan Ahmed      	Modified
+#July 28 2019	Rafael Leandro		Included the search keywords "could not" and "timeout"
 
 
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
@@ -59,7 +58,7 @@ while (<ERRORLOG>){
       $tooManyErrors += 1;
       $secondLine = $_;
       print "$firstLine$secondLine\n";
-      if(($tooManyErrors < 5 ) && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/)){
+      if(($tooManyErrors < 5 ) && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/) && ($firstLine !~ /Type '1b' not allowed before login/)){
       print "Error Found\n";
 
    `/usr/sbin/sendmail -t -i <<EOF
@@ -165,7 +164,7 @@ print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
    }
    if(/$currDate/){
       if (/$currHour\:$currMin\:/){
-         if((/cease/ || /webtest/ || /Error/ || /sleeping/i || /critically/i || /failed/i || /degradation/i || /deadlock/i || /stack trace/i || /fatal/i || /critical/i || /severity\: [10..26]/i)&&(!/1608/ && !/Ct-library/)){
+         if((/cease/ || /webtest/ || /Error/ || /timeout/i || /could not/i || /sleeping/i || /critically/i || /failed/i || /degradation/i || /deadlock/i || /stack trace/i || /fatal/i || /critical/i || /severity\: [10..26]/i)&&(!/1608/ && !/1621/ && !/Ct-library/ && !/Type '1b' not allowed before login/)){
             #print "Found it\n";
 	    $firstLine = $_;
             $getNextLine = 1;

@@ -13,7 +13,7 @@
 
 $login = $ARGV[0];
 $login =~ s/\n//g;
-open (PASS,"</opt/sap/cron_scripts/passwords/passwords") or die "Can't Open password file: $!\n\n";
+open (PASS,"</opt/sybase/cron_scripts/passwords/passwords") or die "Can't Open password file: $!\n\n";
 
 while (<PASS>){
    @passLine = split(/\t/,$_);

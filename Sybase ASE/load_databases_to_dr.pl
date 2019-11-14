@@ -29,6 +29,13 @@ if (defined $dba) {
     $mail='CANPARDatabaseAdministratorsStaffList';
 }
 
+my $resumerep = $ARGV[2];
+if (defined $resumerep) {
+    $resumerep=$resumerep;
+} else {
+    $resumerep=0;
+}
+
 $prodserver='CPDB4';
 
 print "Server Being Loaded: $prodserver\n";
@@ -36,13 +43,11 @@ print "Server Being Loaded: $prodserver\n";
 #Set starting variables
 $currTime = localtime();
 $startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
 $startMin=sprintf('%02d',((localtime())[1]));
 
 $my_pid = getppid();
 $isProcessRunning =`ps -ef|grep sybase|grep load_databases_to_dr.pl|grep -v grep|grep -v $my_pid|grep -v "vim load_databases_to_dr.pl"|grep -v "less load_databases_to_dr.pl"`;
 
-#print "My pid: $my_pid\n";
 print "Running: $isProcessRunning \n";
 
 if ($isProcessRunning){
@@ -52,14 +57,16 @@ die "\n Can not run, previous process is still running \n";
 print "No Previous process is running, continuing\n";
 }
 
-#print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 #Cleaning up the backup volume to free space (deletes all files older than 7 days)
-$deleteoldfiles =`find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
+`find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
 
 $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
+go
+exec dbo.rp_kill_db_processes '$database'
 go
 load database $database from "/opt/sap/db_backups/$database.dmp"
 go
@@ -87,7 +94,20 @@ $sqlError
 EOF
 `;
 die;
-}else{
+}
+else
+{
+
+if ($resumerep == 1){
+$sqlError = `. /opt/sap/SYBASE.sh
+isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -Shqvsybrep3 <<EOF 2>&1
+resume connection to $prodserver.$database
+go
+exit
+EOF
+`;
+}
+
 $finTime = localtime();
 print "Time Finished: $finTime\n";
 

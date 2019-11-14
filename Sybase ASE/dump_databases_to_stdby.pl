@@ -42,6 +42,13 @@ if (defined $dba) {
     $mail='CANPARDatabaseAdministratorsStaffList';
 } 
 
+my $resumerep = $ARGV[2];
+if (defined $resumerep) {
+    $resumerep=$resumerep;
+} else {
+    $resumerep=0;
+} 
+
 #Set starting variables
 $currTime = localtime();
 $startHour=sprintf('%02d',((localtime())[2]));
@@ -68,7 +75,7 @@ $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
 go
-dump database $database to "/home/sybase/db_backups/$database.dmp" compression=100
+dump database $database to "/opt/sap/db_backups/$database.dmp" compression=100
 go
 exit
 EOF
@@ -89,7 +96,7 @@ die;
 }
 
 #Copying files to standby server
-$scpError=`scp -p /home/sybase/db_backups/$database.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
+$scpError=`scp -p /opt/sap/db_backups/$database.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
 $scpError  = $? >> 8;
@@ -112,7 +119,7 @@ die;
 ###############################
 
 #Loading databases into standby server
-$load_msgs = `ssh $stbyserver /opt/sap/cron_scripts/load_databases_to_stdby.pl $database $mail`;
+$load_msgs = `ssh $stbyserver /opt/sap/cron_scripts/load_databases_to_stdby.pl $database $mail $resumerep`;
 #Loading databases into DR server
 #$load_msgs_dr = `ssh $drserver /opt/sap/cron_scripts/load_databases_mpr.pl $drserver`;
 

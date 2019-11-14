@@ -1,0 +1,60 @@
+CurrTime: Sun Jul 28 11:05:01 2019, Hour: 11, Min: 05
+stty: standard input: Inappropriate ioctl for device
+stty: standard input: Inappropriate ioctl for device
+Usage information at date and time: Jul 28 2019 11:05AM.
+ 
+ Name                                Num_free    Num_active  Pct_act Max_Used    Reuse_cnt   Instance_Name                  
+ ----------------------------------- ----------- ----------- ------- ----------- ----------- ------------------------------ 
+ procedure cache size                    6407214     1272786  16.57      1377406       82714 NULL                           
+
+(1 row affected)
+(return status = 0)
+Usage information at date and time: Jul 28 2019 11:05AM.
+ 
+ Name                                Num_free    Num_active  Pct_act Max_Used    Reuse_cnt   Instance_Name                  
+ ----------------------------------- ----------- ----------- ------- ----------- ----------- ------------------------------ 
+ procedure cache size                    7660414       19586   0.26      1377406      156623 NULL                           
+
+(1 row affected)
+(return status = 0)
+Msg 113, Level 15, State 1:
+Server 'CPDB1', Line 3:
+Missing end comment mark ''.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+This command must be run in the temporary database.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+Running DBCC ORPHANTABLES in READ-ONLY mode.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+Running DBCC ORPHANTABLES in READ-ONLY mode.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+Running DBCC ORPHANTABLES in READ-ONLY mode.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+Running DBCC ORPHANTABLES in READ-ONLY mode.
+Found orphan table #ok_data0104592b3dcb69944.
+Unable to obtain exclusive lock on the table #events201045924e74b69944. Drop failed.
+Found orphan table #events01045922546b69944.
+Unable to obtain exclusive lock on the table #delete_this0102601aa3e94524c. Drop failed.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+DBCC execution completed. If DBCC printed error messages, contact a user with System Administrator (SA) role.
+Msg 8201, Level 26, State 3:
+Server 'CPDB1', Line 1:
+Keep count of descriptor (objid=299243185, dbid=7) was expected to be 1. Instead 0 was found.
+ASE is terminating this process.
+CT-LIBRARY error:
+	ct_send(): network packet layer: internal Client Library error: State error: trying to write when connection is expecting a read.
+CT-LIBRARY error:
+	ct_cancel(): network packet layer: internal net library error: Net-Library operation terminated due to disconnect
+
+Time Finished: Sun Jul 28 11:05:16 2019

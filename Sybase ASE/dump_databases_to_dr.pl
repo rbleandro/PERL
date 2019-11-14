@@ -35,10 +35,16 @@ if (defined $dba) {
     $mail='CANPARDatabaseAdministratorsStaffList';
 } 
 
+my $resumerep = $ARGV[2];
+if (defined $resumerep) {
+    $resumerep=$resumerep;
+} else {
+    $resumerep=0;
+} 
+
 #Set starting variables
 $currTime = localtime();
 $startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
 $startMin=sprintf('%02d',((localtime())[1]));
 
 $my_pid = getppid();
@@ -61,7 +67,7 @@ $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
 go
-dump database $database to "/home/sybase/db_backups/$database.dmp" compression=100
+dump database $database to "/opt/sap/db_backups/$database.dmp" compression=100
 go
 exit
 EOF
@@ -81,8 +87,8 @@ EOF
 die;
 }
 
-#Copying files to dr server
-$scpError=`scp -p /home/sybase/db_backups/$database.dmp sybase\@$drserver:/opt/sap/db_backups`;
+print "Now copying the dump file to $drserver\n";
+$scpError=`scp -p /opt/sap/db_backups/$database.dmp sybase\@$drserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
 $scpError  = $? >> 8;
@@ -100,11 +106,10 @@ EOF
 die;
 }
 
-#Loading databases into dr server
-$load_msgs = `ssh $drserver /opt/sap/cron_scripts/load_databases_to_dr.pl $database $mail`;
+print "Now firing the load script at $drserver\n";
+$load_msgs = `ssh $drserver /opt/sap/cron_scripts/load_databases_to_dr.pl $database $mail $resumerep`;
 
 print "$load_msgs \n";
-#print "$load_msgs_dr \n";
 
 $finTime = localtime();
 print "Time Finished: $finTime\n";

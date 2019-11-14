@@ -34,7 +34,7 @@ $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: servicedesk\@canpar.com, audit.report\@loomis\-express.com
-From: amer_khan\@canpar.com
+From: sybase\@CPDB1.canpar.com
 Subject: Sybase Disabled Users List Created on $finTime
 
 Please assign to Adela for her review.

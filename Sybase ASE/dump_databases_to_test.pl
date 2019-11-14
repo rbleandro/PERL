@@ -14,71 +14,83 @@
 #May 29 2019	Rafael Bahia	Added error handling for the scp phase
 
 #Usage Restrictions
-if ($#ARGV < 1){
-   print "Usage: dump_databases_to_test.pl originDB destDB rleandro\@canpar.com 1\n";
-   die "Script Executed With Wrong Number Of Arguments\n";
-}
-
-my $option = $ARGV[3];
-my $dba = $ARGV[2];
-
-if (defined $dba) {
-    $mail=$dba;
-} else {
-    $mail='CANPARDatabaseAdministratorsStaffList';
-}
-
-if (defined $option) {
-    $option=$option;
-} else {
-    $option=0;
-}
-
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 
 use Sys::Hostname;
-$prodserver = hostname();
-$testserver = '10.3.1.165';
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $option=0;
+my $finTime = localtime();
+my $allowparallel=0; #if 1 (one), allows multiple instances of the script to run in parallel
+my $prodserver = hostname();
+my $originDB = "";
+my $destDB = "";
+my @prodline = "";
+
+GetOptions(
+    'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'allowparallel|ap=i' => \$allowparallel,
+	'loadoption|l=i' => \$option,
+	'origindb=s' => \$originDB,
+	'destdb=s' => \$destDB
+) or die "Usage: $0 --originDB dba --destDB dba --skipcheckprod|s 0 --to|r rleandro --loadoption|l 1|0\n";
+
+if ($originDB eq "") {die "\nDatabase name (parameter --originDB) cannot be blank.\n\n";}
+
+if ($skipcheckprod == 0){
+	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
+	while (<PROD>){
+		@prodline = split(/\t/, $_);
+		$prodline[1] =~ s/\n//g;
+	}
+	close PROD;
+	if ($prodline[1] eq "0" ){
+		print "standby server \n";
+		die "This is a stand by server\n";
+	}
+}
+
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
+my $testserver = '10.3.1.165';
 
 #Set starting variables
-$currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-$startMin=sprintf('%02d',((localtime())[1]));
+my $currTime = localtime();
+my $startHour=sprintf('%02d',((localtime())[2]));
+my $startMin=sprintf('%02d',((localtime())[1]));
 
-#$my_pid = getppid();
-#$isProcessRunning =`ps -ef|grep sybase|grep dump_databases.pl|grep -v grep|grep -v $my_pid|grep -v "vim dump_databases.pl"|grep -v "less dump_databases.pl"`;
+if ($allowparallel==0){
+	my $my_pid = getppid();
+	my $isProcessRunning =`ps -ef|grep sybase|grep dump_databases.pl|grep -v grep|grep -v $my_pid|grep -v "vim dump_databases.pl"|grep -v "less dump_databases.pl"`;
 
-#print "My pid: $my_pid\n";
-#print "Running: $isProcessRunning \n";
-#
-#if ($isProcessRunning){
-#die "\n Can not run, previous process is still running \n";
-#
-#}else{
-#print "No Previous process is running, continuing\n";
-#}
+	print "My pid: $my_pid\n";
+	print "Running: $isProcessRunning \n";
+
+	if ($isProcessRunning){
+	die "\n Can not run, previous process is still running \n";
+
+	}else{
+	print "No Previous process is running, continuing\n";
+	}
+}
 
 print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 #Cleaning up the backup volume to free space (deletes all files older than 7 days)
-$deleteoldfiles =`sudo find /home/sybase/db_backups/ -mindepth 1 -mtime +60 -delete`;
+my $deleteoldfiles =`sudo find /opt/sap/db_backups/ -mindepth 1 -mtime +60 -delete`;
 
-$originDB = $ARGV[0];
-$destDB = $ARGV[1];
-
-$sqlError = `. /opt/sap/SYBASE.sh
+my $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
 go
-dump database $originDB to "/home/sybase/db_backups/$originDB.dmp" compression=100
+dump database $originDB to "/opt/sap/db_backups/$originDB.dmp" compression=100
 go
 exit
 EOF
@@ -95,14 +107,14 @@ Subject: Errors - dump_databases_to_test at $finTime
 $sqlError
 EOF
 `;
-die;
+$finTime = localtime();
+print $finTime . "\n";
+die "Email sent";
 }
 
 #Copying files to TEST server
-$scpError=`scp -p /home/sybase/db_backups/$originDB.dmp sybase\@$testserver:/home/sybase/db_backups`;
-print "$scpError\n";
+my $scpError=system("scp -p /opt/sap/db_backups/$originDB.dmp sybase\@$testserver:/opt/sap/db_backups");
 
-$scpError  = $? >> 8;
 if ($scpError != 0) {
 print "$scpError\n";
 $finTime = localtime();
@@ -114,13 +126,15 @@ Subject: Errors - dump_databases_to_test (scp phase) at $finTime
 $scpError
 EOF
 `;
-die;
+$finTime = localtime();
+print $finTime . "\n";
+die "Email sent";
 }
 
 if ($option == 1){
 
 #Loading databases into TEST server
-$load_msgs = `ssh $testserver /opt/sap/cron_scripts/load_databases_to_test.pl $originDB $destDB $mail`;
+my $load_msgs = `ssh $testserver /opt/sap/cron_scripts/load_databases_to_test.pl $originDB $destDB $mail`;
 
 print "$load_msgs \n";
 }

@@ -69,12 +69,72 @@
 # $today=($year+1900)."-".($month+1)."-".$day;
 # $mv_msg = `sudo mv /opt/sap/bcp_data/mpr_data/mpr_payroll/MPR_Export_Hourly_Payroll.xlsx /opt/sap/bcp_data/mpr_data/mpr_payroll/backup/MPR_Export_Hourly_Payroll_$today.csv 2>&1`;
 
-$scpError=`scp -p /home/sybase/db_backups/shippingws.dmp sybase\@10.3.1.165:/home/sybase/db_backups`;
+#$scpError=`scp -p /opt/sap/db_backups/shippingws.dmp sybase\@10.3.1.165:/opt/sap/db_backups`;
 #print "$scpError\n";
 
-$scpError  = $? >> 8;
-if ($scpError != 0) 
-	{print "Sending of file NO\n";}
-	else 
-	{print "Sending of file DONE\n";}
-	
+# $scpError  = $? >> 8;
+# if ($scpError != 0) 
+	# {print "Sending of file NO\n";}
+	# else 
+#	{print "Sending of file DONE\n";}
+
+# $error = `sqsh -Usa -Ps9b2s3<<EOF 2>&1
+# \\set style=vert
+# set nocount on
+# set proc_return_status off
+# go
+# use dba
+# go
+# exec dba.dbo.monitor_num_connections
+# go
+# select sum(NumSessions) as NumTotalConn
+# from dba.dbo.monNumSession
+# where snapTime = (select max(snapTime) from dba.dbo.monNumSession)
+# go
+# select * 
+# from dba.dbo.monNumSession 
+# where 1=1
+# and NumSessions>50 
+# and snapTime = (select max(snapTime) from dba.dbo.monNumSession)
+# order by NumSessions desc
+# go
+# exit
+# EOF
+# `;
+
+#$error='<tr><td>dkdfja</td><td>gggggg</td><td>yyyyy</td><td>rrrrr</td><td>mmmmm</td><td>qqqqq</td><td>iiiii</td></tr>
+#<tr><td>dkdfja</td><td>gggggg</td><td>yyyyy</td><td>rrrrr</td><td>mmmmm</td><td>qqqqq</td><td>iiiii</td></tr>
+#<tr><td>dkdfja</td><td>gggggg</td><td>yyyyy</td><td>rrrrr</td><td>mmmmm</td><td>qqqqq</td><td>iiiii</td></tr>
+#<tr><td>dkdfja</td><td>gggggg</td><td>yyyyy</td><td>rrrrr</td><td>mmmmm</td><td>qqqqq</td><td>iiiii</td></tr>';
+#
+#print "$error\n";
+#
+#`/usr/sbin/sendmail -t -i <<EOF
+#To: rleandro\@canpar.com
+#Subject: sqsh test
+#Content-Type: text/html
+#MIME-Version: 1.0
+#
+#<html> 
+#<head>
+#<title>HTML E-mail</title>
+#</head>
+#<body>
+#<table border="1">
+#$error
+#</table>
+#</body>
+#</html>
+#EOF
+#`;
+
+# `/usr/bin/mutt -s "sqsh test"  "rleandro\@canpar.com" <<EOF
+
+# $error;
+
+# Thanks,
+# The DBA team.
+# EOF
+# `;
+
+print $ENV{'dropbox'};

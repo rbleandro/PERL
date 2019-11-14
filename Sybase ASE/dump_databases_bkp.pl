@@ -53,13 +53,13 @@ $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
 go
-dump database shippingws to "/home/sybase/db_backups/shippingws.dmp" compression=100
+dump database shippingws to "/opt/sap/db_backups/shippingws.dmp" compression=100
 go
-dump database canshipws to "/home/sybase/db_backups/canshipws.dmp" compression=100
+dump database canshipws to "/opt/sap/db_backups/canshipws.dmp" compression=100
 go
-dump database uss to "/home/sybase/db_backups/uss.dmp" compression=100
+dump database uss to "/opt/sap/db_backups/uss.dmp" compression=100
 go
-dump database termexp to "/home/sybase/db_backups/termexp.dmp" compression=100
+dump database termexp to "/opt/sap/db_backups/termexp.dmp" compression=100
 go
 exit
 EOF
@@ -80,16 +80,16 @@ die;
 }
 
 
-$scpError=`scp -p /home/sybase/db_backups/shippingws.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
+$scpError=`scp -p /opt/sap/db_backups/shippingws.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
-$scpError=`scp -p /home/sybase/db_backups/uss.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
+$scpError=`scp -p /opt/sap/db_backups/uss.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
-$scpError=`scp -p /home/sybase/db_backups/canshipws.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
+$scpError=`scp -p /opt/sap/db_backups/canshipws.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
-$scpError=`scp -p /home/sybase/db_backups/termexp.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
+$scpError=`scp -p /opt/sap/db_backups/termexp.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
 ###############################

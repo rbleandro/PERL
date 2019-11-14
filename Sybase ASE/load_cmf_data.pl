@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/perl
 
 ###################################################################################
 #Script:   This script converts cmf data from flat files into CPDATA2 cmf_data db #
@@ -28,7 +28,7 @@ print "standby server \n";
 use Sys::Hostname;
 $prodserver = hostname();
 if ($prodserver eq "CPDB2" ) {
-    $standbyserver = "CPDB1"; 
+    $standbyserver = "CPDB1";
 }
 else
 {
@@ -158,9 +158,9 @@ print "cpError: $cpError\n";
 #      if($firstRow == 1){
 #         push(@rowArray,"||\n");
 #         foreach $line (@rowArray){
-# 
+#
 #           $rowToAdd .= $line;
- 
+
 #        }
 #         print BCPFILE $rowToAdd;
 #         undef $addRow;
@@ -790,7 +790,7 @@ print "Messages from truncating and repopulating rc_zones\n\n$sqlError\n\n";
 #
 #while (<INFILE>){
 ##last;
-##Converting french characters from ANSI to ASCII types...  
+##Converting french characters from ANSI to ASCII types...
 #   $_ =~ s/(\W)/defined $ASC{unpack('C*',$1)} ? pack('C*',$ASC{unpack('C*',$1)}) : pack('C*',unpack('C*',$1))/ge;
 #
 #####################################################
@@ -829,7 +829,7 @@ print "Messages from truncating and repopulating rc_zones\n\n$sqlError\n\n";
 #   $_ =~ s/\0/ /g; #Control characters to be taken out
 #   $_ =~ s/\r//g;
 #   $_ =~ s/\n//g;
-##Converting french characters from ANSI to ASCII types...  
+##Converting french characters from ANSI to ASCII types...
 #   $_ =~ s/(\W)/defined $ASC{unpack('C*',$1)} ? pack('C*',$ASC{unpack('C*',$1)}) : pack('C*',unpack('C*',$1))/ge;
 #   $_ = $_."\n"; #remove all carraige returns and new line char and add one add the end of the row
 #
@@ -876,7 +876,7 @@ while (<INFILE>){
    $_ =~ s/\r/ /g;
    $_ =~ s/\n//g;
 
-#Converting french characters from ANSI to ASCII types...  
+#Converting french characters from ANSI to ASCII types...
    #$_ =~ s/(\W)/defined $ASC{unpack('C*',$1)} ? pack('C*',$ASC{unpack('C*',$1)}) : pack('C*',unpack('C*',$1))/ge;
    $_ = $_."\n"; #remove all carraige returns and new line char and add one add the end of the row
 
@@ -971,7 +971,7 @@ close INFILE;
 #ELSE
 #PRINT '<<< DROPPED INDEX dbo.cparf06i.cust_org_amt_nc >>>'
 #END
-#go   
+#go
 #truncate table cparf06i
 #go
 #exit
@@ -985,7 +985,7 @@ close INFILE;
 #go
 #CREATE NONCLUSTERED INDEX cust_org_amt_nc
 #ON dbo.cparf06i(customer,original_amt)
-#go   
+#go
 #exit
 #EOF
 #`;
@@ -1097,7 +1097,7 @@ close INFILE;
 #ELSE
 #PRINT '<<< DROPPED INDEX dbo.cparf06p.cust_nc >>>'
 #END
-#go   
+#go
 #truncate table cparf06p
 #go
 #exit
@@ -1111,7 +1111,7 @@ close INFILE;
 #go
 #CREATE NONCLUSTERED INDEX cust_nc
 #ON dbo.cparf06p(customer,invoice_date)
-#go   
+#go
 #exit
 #EOF
 #`;
@@ -2948,7 +2948,7 @@ while (/(\/)(\D\D)(\/)/){
    if (/(^.{22})(....)(.)(..)(.)(..)/){
       if($2 > 2007 || $2 < 1995){
          if ($4 !~ /\d\d/){
-            $_ =~ s/(^.{22})(....)(.)(..)(.)(..)/$1.'    '.'      '/e; 
+            $_ =~ s/(^.{22})(....)(.)(..)(.)(..)/$1.'    '.'      '/e;
          }else{
             $_ =~ s/(^.{22})(....)/$1.'2000'.$3.$4/e;
          }
@@ -3240,14 +3240,14 @@ while (<INFILE>){
       push(@rowArray,$_);
       next;
    }
-      
+
 }#eof of while loop
 
 close BCPFILE;
 close INFILE;
 
 
-#Truncating table 
+#Truncating table
 #$sqlError = `. /opt/sap/SYBASE.sh
 #isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -w300 <<EOF 2>&1
 #use cmf_data

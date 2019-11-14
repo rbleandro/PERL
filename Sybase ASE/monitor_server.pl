@@ -1,165 +1,76 @@
 #!/usr/bin/perl
 
-###################################################################################
-#Script:   This script monitors IOS over 1000000                                  #
-#                                                                                 #
-#Author:   Rafael Bahia                                                           #
-#Revision:                                                                        #
-#Date		Name		Description                                       		  #
-#---------------------------------------------------------------------------------#
-#09/22/2018      Rafael Bahia      Created
-###################################################################################
+#Script:   	This script monitor CPU load, alerting when above 95%. This script relies on the sqsh component. Consult the sharepoint documentation to see how to install it.
+#
+#Author:   		Rafael Leandro
+#Date			Name			Description
+#---------------------------------------------------------------------------------
+#09/22/2018     Rafael Leandro  Created
+#Aug 10 2019	Rafael Leandro	1.Reformatting of the sql queries and perl commands. Elimination of obsolete code.
+#								2.Review of thread report query
+#								3.Changed the script to use sqsh when sending the report (better formatting)
+#								4.Parameterized the alert threshold (check variable $tcpu) and the mail recipient
+#16/08/19   	Rafael Leandro  Added html support for a better look in the final email.
 
 #Usage Restrictions
-$hour=sprintf('%02d',((localtime())[2]));
-$hour = int($hour);
-
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod") or die "Can't open < /opt/sap/cron_scripts/passwords/check_prod : $!";
-
-while (<PROD>){
-	@prodline = split(/\t/, $_);
-	$prodline[1] =~ s/\n//g;
-}
-
-if ($prodline[1] eq "0" ){
-	print "standby server \n";
-	die "This is a stand by server\n"
-}
-
 use Sys::Hostname;
-$prodserver = hostname();
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
-#Execute CPU Monitoring 
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $finTime = localtime();
+my @prodline="";
+my $hour=sprintf('%02d',((localtime())[2]));
+$hour = int($hour);
+my $tcpu=95;
+my $cpu=0;
 
-$error = `. /opt/sap/SYBASE.sh
+GetOptions(
+    'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'threshold|t=i' => \$tcpu
+) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --threshold|t 80\n";
+
+if ($skipcheckprod == 0){
+open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
+while (<PROD>){
+@prodline = split(/\t/, $_);
+$prodline[1] =~ s/\n//g;
+}
+if ($prodline[1] eq "0" ){
+print "standby server \n";
+        die "This is a stand by server\n"
+}
+}
+
+my $prodserver = hostname();
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
+#Execute CPU Monitoring
+
+my $error = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b<<EOF 2>&1
 set nocount on
-
+set proc_return_status off
+go
 exec dba.dbo.sp_monitor_server_custom
 go
-select top 1 '|',cpu_busy,'|',convert(int,str_replace(substring(connections,charindex("(", connections)+1,6),')','')) as num_logins from dba.dbo.server_health order by SnapTime desc
+select top 1 cpu_busy from dba.dbo.server_health order by SnapTime desc
 go
 exit
 EOF
 `;
-
-$NumConnections = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w200 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b<<EOF 2>&1
-set nocount on
-select "Host","Program","User","#Sessions"
-union
-SELECT
-	case 
-	    CASE clienthostname 
-            WHEN '' 
-            THEN hostname 
-            WHEN NULL 
-            THEN hostname 
-            ELSE clienthostname 
-	    END
-	WHEN NULL then 
-	    case ipaddr 
-	        when '10.4.96.82' then 'lmsdc1vaproc02' 
-	        when '10.3.1.223' then 'hqvmanproc1' 
-	        when '10.4.96.121' then 'lmsdc1vaproc01' 
-	        when '10.3.1.37' then 'hqvdstage1' 
-	        when '10.3.1.100' then 'cprhqvprtl03'
-	        when '10.3.1.107' then 'cprhqvprtlstg'
-	        when '10.3.1.167' then 'hqvcsw01'
-	        when '10.4.96.108' then 'lmsws1'
-	        when '10.4.96.43' then 'hqvlmsecomm1'
-	        when '10.4.96.103' then 'lmscrystrpt1'
-	        
-	    end 
-	    else CASE clienthostname 
-            WHEN '' 
-            THEN hostname 
-            WHEN NULL 
-            THEN hostname 
-            ELSE clienthostname 
-	    END
-	end 'host',
-
-	CASE clientapplname 
-		WHEN '' 
-		THEN program_name 
-		WHEN NULL 
-		THEN program_name 
-		ELSE clientapplname 
-	END 'program',
-	SUSER_NAME(suid),
-	convert(varchar(50),count(spid)) as 'NumSessions'
-FROM master.dbo.sysprocesses sp
-where 1=1
-and DB_NAME(dbid) not in  ('tempdb3')
-and status not in ('background')
-and cmd not in ('HK WASH','HK GC','HK CHORES','NETWORK HANDLER','MEMORY TUNE','DEADLOCK TUNE','SHUTDOWN HANDLER','KPP HANDLER','ASTC HANDLER','CHECKPOINT SLEEP','PORT MANAGER','AUDIT PROCESS','CHKPOINT WRKR','LICENSE HEARTBEAT','JOB SCHEDULER')
-and status <> 'recv sleep'
-and blocked not in (select distinct spid from master..syslocks where spid not in (select spid from master..sysprocesses))
-group by CASE clientapplname 
-		WHEN '' 
-		THEN program_name 
-		WHEN NULL 
-		THEN program_name 
-		ELSE clientapplname 
-	END, SUSER_NAME(suid)
-	,case 
-	    CASE clienthostname 
-            WHEN '' 
-            THEN hostname 
-            WHEN NULL 
-            THEN hostname 
-            ELSE clienthostname 
-	    END
-	WHEN NULL then 
-	    case ipaddr 
-	        when '10.4.96.82' then 'lmsdc1vaproc02' 
-	        when '10.3.1.223' then 'hqvmanproc1' 
-	        when '10.4.96.121' then 'lmsdc1vaproc01' 
-	        when '10.3.1.37' then 'hqvdstage1' 
-	        when '10.3.1.100' then 'cprhqvprtl03'
-	        when '10.3.1.107' then 'cprhqvprtlstg'
-	        when '10.3.1.167' then 'hqvcsw01'
-	        when '10.4.96.108' then 'lmsws1'
-	        when '10.4.96.43' then 'hqvlmsecomm1'
-	        when '10.4.96.103' then 'lmscrystrpt1'
-	        
-	    end 
-	    else CASE clienthostname 
-            WHEN '' 
-            THEN hostname 
-            WHEN NULL 
-            THEN hostname 
-            ELSE clienthostname 
-	    END
-	end
-go
-exit
-EOF
-`;
-
-#print $error;
-#CANPARDatabaseAdministratorsStaffList
-#rleandro
-
-if($NumConnections =~ /no|not|Msg/)
-{	
-print $NumConnections;
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: ERROR - monitor_server script. 
-$NumConnections
-EOF
-`;
-die "Email sent";
-}
 
 if($error =~ /no|not|Msg/)
-{	
-print $error;
+{
 `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: ERROR - monitor_server script. 
+To: $mail\@canpar.com
+Subject: ERROR - monitor_server script (get current metrics phase).
 $error
 EOF
 `;
@@ -168,52 +79,86 @@ die "Email sent";
 
 $error =~ s/\s//g;
 $error =~ s/\t//g;
-@list = split(/\|/,$error);
-$cpu = $list[1];
-$num_logins = $list[2];
+$cpu=$error;
 
-#print $cpu;
-#print $num_logins;
-
-if ($cpu > 85 && $hour > 6 && $hour < 23)
+if ($cpu > $tcpu)
 {
-#print "sending";
+
+my $NumConnections = `. /opt/sap/SYBASE.sh
+isql -w900 -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b<<EOF 2>&1
+set nocount on
+go
+SELECT
+CASE sp.clienthostname WHEN '' THEN isnull(sp.hostname,sp.ipaddr) WHEN NULL THEN isnull(sp.hostname,sp.ipaddr) ELSE sp.clienthostname END 'host','#',
+CASE clientapplname WHEN '' THEN program_name WHEN NULL THEN program_name ELSE clientapplname END 'program','#',
+SUSER_NAME(suid) as username,'#',
+count(spid) as 'NumSessions'
+FROM master.dbo.sysprocesses sp
+where 1=1
+and status not in ('background')
+and cmd not in ('HK WASH','HK GC','HK CHORES','NETWORK HANDLER','MEMORY TUNE','DEADLOCK TUNE','SHUTDOWN HANDLER','KPP HANDLER','ASTC HANDLER','CHECKPOINT SLEEP','PORT MANAGER','AUDIT PROCESS','CHKPOINT WRKR','LICENSE HEARTBEAT','JOB SCHEDULER')
+and status <> 'recv sleep'
+group by CASE clientapplname WHEN '' THEN program_name WHEN NULL THEN program_name ELSE clientapplname END, SUSER_NAME(suid)
+,CASE sp.clienthostname WHEN '' THEN isnull(sp.hostname,ipaddr) WHEN NULL THEN isnull(sp.hostname,ipaddr) ELSE sp.clienthostname END,
+SUSER_NAME(suid) 
+order by count(spid) desc
+go
+exit
+EOF
+`;
+
+if($NumConnections =~ /Msg/)
+{
 `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Server load alert!!!
-CPU now (%): $cpu. Please check. Number of logins is: $num_logins. Below is a summary of active applications right now. Execute the queries at the end to see server trends and historical data.
-
+To: $mail\@canpar.com
+Subject: ERROR - monitor_server script (get sessions per app phase).
 $NumConnections
+EOF
+`;
+die "Email sent (get sessions per app)";
+}
 
-select top 100 * from dba.dbo.dba_mon_processes where snapTime=(select max(snapTime) from dba.dbo.dba_mon_processes) order by program
-select top 10 * from dba.dbo.server_health order by SnapTime desc
+$error=~s/\t//g;
+
+my @results="";
+my $htmltable="<tr><td>host</td><td>program</td><td>username</td><td>NumSessions</td></tr>";
+my $td="";
+@results = split(/\n/,$NumConnections);
+for (my $i=0; $i <= $#results; $i++){
+	my @line = split(/#/,$results[$i]);
+	$htmltable.="<tr>";
+	for (my $l=0; $l <= $#line; $l++){
+		$td.="<td>" . $line[$l] . "</td>";
+	}
+	$htmltable.=$td;
+	$htmltable.="</tr>";
+	$td="";
+}
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: $mail\@canpar.com
+Subject: Server load alert!!!
+Content-Type: text/html
+MIME-Version: 1.0
+
+<html>
+<head>
+<title>HTML E-mail</title>
+</head>
+<body>
+<p>CPU now (%): $cpu. Please check. Below is a report of number of active sessions per application. Execute the queries at the end to see server trends and historical data.</p>
+<table border="1">
+$htmltable
+</table>
+<p>select top 100 * from dba.dbo.dba_mon_processes where snapTime=(select max(snapTime) from dba.dbo.dba_mon_processes) order by program</p>
+<p>select top 10 * from dba.dbo.server_health order by SnapTime desc</p>
+<p>Script's name: $0. Current threshold: $tcpu%.</p>
+</body>
+</html>
 EOF
 `;
 }
 else
 {
-print "CPU is now(%): $cpu
-";
+print "CPU is now(%): $cpu\n";
 }
-
-#if ($num_logins > 13000 && $hour > 6 && $hour < 23)
-#{
-##print "sending";
-#`/usr/sbin/sendmail -t -i <<EOF
-#To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-#Subject: High number of user connections!!!
-#Number of logins is: $num_logins. CPU load is at $cpu.. Below is a summary of active applications right now. Execute the queries at the end to see server trends and historical data.
-#
-#$NumConnections
-#
-#select top 100 * from dba.dbo.dba_mon_processes where snapTime=(select max(snapTime) from dba.dbo.dba_mon_processes) order by program
-#select top 10 * from dba.dbo.server_health order by SnapTime desc
-#EOF
-#`;
-#}
-#else
-#{
-#print "Number of users is now: $num_logins
-#";
-#}
-

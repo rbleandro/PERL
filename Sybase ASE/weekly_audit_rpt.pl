@@ -62,8 +62,8 @@ die;
 `gzip /tmp/audit_report_vw.tdl`;
 
 
-`/usr/bin/mutt -s "Weekly Audit Report"  "frank_orourke\@canpar.com,jim_pepper\@canpar.com,rshan\@canpar.com,CANPARDatabaseAdministratorsStaffList\@canpar.com" -a /tmp/audit_report_vw.tdl.gz <<EOF
-Here is your weekly audit report.
+`/usr/bin/mutt -s "Database weekly changes - Audit report"  "servicedesk\@canpar.com,frank_orourke\@canpar.com,jim_pepper\@canpar.com,CANPARDatabaseAdministratorsStaffList\@canpar.com" -a /tmp/audit_report_vw.tdl.gz <<EOF
+Here is your weekly audit report for database changes on Sybase production server.
 
 Thanks,
 The DBA team.

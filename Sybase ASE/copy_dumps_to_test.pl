@@ -35,7 +35,7 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 $database = $ARGV[0];
 
 #Copying files to TEST server
-$scpError=`scp -p /home/sybase/db_backups/$database.dmp sybase\@$testserver:/home/sybase/db_backups`;
+$scpError=`scp -p /opt/sap/db_backups/$database.dmp sybase\@$testserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
 

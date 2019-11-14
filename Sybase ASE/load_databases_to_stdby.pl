@@ -1,13 +1,16 @@
 #!/usr/bin/perl -w
 
-#Script:   This script loads a database to the standby server
-#
+#Script:   	This script loads a database to the standby server on demand.
+#Usage:		load_databases_to_stdby.pl <dbname(string)> [mailrecipient(string)] [resumeSRSconnection(bit)]
+#Examples:	load_databases_to_stdby.pl dba rleandro 0
 #Author:	Rafael Bahia
 #Revision:
-#Date           	Name            Description
+#Date           Name            Description
 #----------------------------------------------------------------------------
-#Jan 7  2019		Rafael Bahia	Created
-#May 16 2019		Rafael Bahia	Added usage restrictions
+#Jan 7  2019	Rafael Leandro	Created
+#May 16 2019	Rafael Leandro	Added usage restrictions and an option to send the alerts to specific people only
+#July 20 2019	Rafael Leandro	Added a parameter that allows connection to the replication server to resume any connections to the loaded database
+#July 28 2019	Rafael Leandro	Added the keywords "terminated" and "disconnect" to the error check (in case the load session is killed)
 
 #Usage Restrictions
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
@@ -19,6 +22,8 @@ if ($prodline[1] eq "1" ){
 	print "production server \n";
     die "This is the production server. Can't run this here.\n";
 }
+use Sys::Hostname;
+$prodserver = hostname();
 
 $database = $ARGV[0];
 
@@ -29,15 +34,14 @@ if (defined $dba) {
     $mail='CANPARDatabaseAdministratorsStaffList';
 } 
 
-$prodserver='CPDB1';
+my $resumerep = $ARGV[2];
+if (defined $resumerep) {
+    $resumerep=$resumerep;
+} else {
+    $resumerep=0;
+} 
 
 print "Server Being Loaded: $prodserver\n";
-
-#Set starting variables
-$currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
 
 $my_pid = getppid();
 $isProcessRunning =`ps -ef|grep sybase|grep load_databases_to_stdby.pl|grep -v grep|grep -v $my_pid|grep -v "vim load_databases_to_stdby.pl"|grep -v "less load_databases_to_stdby.pl"`;
@@ -52,14 +56,14 @@ die "\n Can not run, previous process is still running \n";
 print "No Previous process is running, continuing\n";
 }
 
-#print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
-
 #Cleaning up the backup volume to free space (deletes all files older than 7 days)
-$deleteoldfiles =`find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
+`find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
 
 $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
+go
+exec dbo.rp_kill_db_processes '$database'
 go
 load database $database from "/opt/sap/db_backups/$database.dmp" 
 go
@@ -67,14 +71,12 @@ online database $database
 go
 use $database
 go
-sp_config_rep_agent $database, send_warm_standby_xacts,true
-go
 dbcc settrunc(ltm,ignore)
 go
 exit
 EOF
 `;
-if ($sqlError =~ /Msg/ || $sqlError =~ /Possible Issue Found/){
+if ($sqlError =~ /Msg/ || $sqlError =~ /terminated/ || $sqlError =~ /disconnect/ || $sqlError =~ /Possible Issue Found/){
 print $sqlError."\n";
 
 $finTime = localtime();
@@ -87,7 +89,20 @@ $sqlError
 EOF
 `;
 die;
-}else{
+}
+else
+{
+
+if ($resumerep == 1){
+$sqlError = `. /opt/sap/SYBASE.sh
+isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -Shqvsybrep3 <<EOF 2>&1
+resume connection to $prodserver.$database
+go
+exit
+EOF
+`;
+}
+
 $finTime = localtime();
 print "Time Finished: $finTime\n";
 

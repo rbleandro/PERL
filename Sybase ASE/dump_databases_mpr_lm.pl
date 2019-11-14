@@ -59,7 +59,7 @@ $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
 go
-dump database mpr_data_lm to "/home/sybase/db_backups/mpr_data_lm.dmp" compression=100
+dump database mpr_data_lm to "/opt/sap/db_backups/mpr_data_lm.dmp" compression=100
 go
 exit
 EOF
@@ -80,12 +80,12 @@ die;
 }
 
 #Copying files to standby server
-$scpError=`scp -p /home/sybase/db_backups/mpr_data_lm.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
+$scpError=`scp -p /opt/sap/db_backups/mpr_data_lm.dmp sybase\@$stbyserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
 
 #Copying files to DR server
-$scpError=`scp -p /home/sybase/db_backups/mpr_data_lm.dmp sybase\@$drserver:/opt/sap/db_backups`;
+$scpError=`scp -p /opt/sap/db_backups/mpr_data_lm.dmp sybase\@$drserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
 

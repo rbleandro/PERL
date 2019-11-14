@@ -1,41 +1,56 @@
 #!/usr/bin/perl -w
 
-#Script:   This script will copy a procedure from the test server to the production server (it will take a backup of the production version first)  
+#Script:   This script will copy a procedure from the test server to the production server (it will take a backup of the production version first)
 #usage: copy_proc_to_prod.pl DatabaseName ObjectName
 
 #Version history:
-#Feb 21 2019	Rafael Bahia	Created										 
-
-$database = $ARGV[0];
-$proc = $ARGV[1]; 
-
-my $dba = $ARGV[2];
-if (defined $dba) {
-    $mail=$dba;
-} else {
-    $mail='CANPARDatabaseAdministratorsStaffList';
-} 
+#Feb 21 2019	Rafael Bahia	Created
 
 #Usage Restrictions
 use Sys::Hostname;
-$testserver = 'CPSYBTEST';
-$prodserver = 'CPDB1';
-#CANPARDatabaseAdministratorsStaffList
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
-$startHour=sprintf('%02d',((localtime())[2]));
-$startMin=sprintf('%02d',((localtime())[1]));
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $finTime = localtime();
+my $database="";
+my $proc="";
 
-`sudo find /home/sybase/db_backups/toProd/ -mindepth 1 -mtime +14 -delete`;
+GetOptions(
+	'database|d=s' => \$database,
+	'proc|p=s' => \$proc,
+	'to|r=s' => \$mail
+) or die "Usage: $0 --database|d svp_cp --proc|p test_proc --to|r rleandro\n";
 
-#$ddlgenOp=`. /opt/sap/SYBASE.sh 
-#/opt/sap/ASE-16_0/bin/ddlgen -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$testserver:4100 -TP -Ndbo.$proc -D$database -O/home/sybase/db_backups/toProd/$database-$proc.sql`;
+my $prodserver = 'CPDB1';
+my $testserver = 'CPSYBTEST';
+my $startHour=sprintf('%02d',((localtime())[2]));
+my $startMin=sprintf('%02d',((localtime())[1]));
 
-$ddlgenOp=`. /opt/sap/SYBASE.sh 
-/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$testserver out /home/sybase/db_backups/toProd/$database-$proc.sql $database dbo.$proc` ;
+if ($proc eq "" or $database eq ""){die "\nDatabase name and procedure name are mandatory.\n\n";}
 
-if ($ddlgenOp =~ /Error/ || $ddlgenOp =~ /Msg/ || $ddlgenOp =~ /ERROR/){
+my $deloldfiles=system("sudo find /opt/sap/db_backups/toProd/ -mindepth 1 -mtime +14 -delete");
+
+if ($deloldfiles != 0){
+print "$deloldfiles\n";
+$finTime = localtime();
+
+`/usr/sbin/sendmail -t -i <<EOF
+To: $mail\@canpar.com
+Subject: Errors - copy_proc_to_prod (delete old files phase) at $finTime
+$deloldfiles
+EOF
+`;
+print $finTime . "\n";
+die "Email sent";
+}
+
+my $ddlgenOp=system(". /opt/sap/SYBASE.sh
+/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$testserver out /opt/sap/db_backups/toProd/$database-$proc.sql $database dbo.$proc") ;
+
+if ($ddlgenOp =~ /Error|ERROR|not found|Msg/ or $ddlgenOp != 0){
 print $ddlgenOp."\n";
-
 $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
@@ -52,14 +67,43 @@ die;
 
 print "Test version exported successfully. Proceeding...\n";
 
-#$ddlgenOp=`. /opt/sap/SYBASE.sh 
-#/opt/sap/ASE-16_0/bin/ddlgen -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver:4100 -TP -Ndbo.$proc -D$database -O/home/sybase/db_backups/toProd/backup-$database-$proc-$startHour\_$startMin.sql`;
+my $sqlError="";
+$sqlError = `. /opt/sap/SYBASE.sh
+isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -n -b<<EOF 2>&1
+set nocount on
+go
+use $database
+go
+select count(*) from sysobjects where name = '$proc'
+go
+exit
+EOF
+`;
 
-$ddlgenOp=`. /opt/sap/SYBASE.sh 
-/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver out /home/sybase/db_backups/toProd/backup-$database-$proc-$startHour\_$startMin.sql $database dbo.$proc` ;
+if ($sqlError =~ /Msg/ || $sqlError =~ /Possible Issue Found/){
+print $sqlError."\n";
+$finTime = localtime();
 
+`/usr/sbin/sendmail -t -i <<EOF
+To: $mail\@canpar.com
+Subject: Errors - copy_proc_to_prod at $finTime during check object existence phase
 
-if ($ddlgenOp =~ /Error/ || $ddlgenOp =~ /Msg/ || $ddlgenOp =~ /ERROR/){
+$sqlError
+EOF
+`;
+die;
+}
+
+$sqlError =~ s/\t//g;
+$sqlError =~ s/\s//g;
+#print $sqlError;
+
+if ($sqlError == 1)
+{
+$ddlgenOp=system(". /opt/sap/SYBASE.sh
+/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver out /opt/sap/db_backups/toProd/backup-$database-$proc-$startHour\_$startMin.sql $database dbo.$proc") ;
+
+if ($ddlgenOp =~ /Error|ERROR|not found|Msg/ or $ddlgenOp != 0){
 print $ddlgenOp."\n";
 
 $finTime = localtime();
@@ -77,21 +121,21 @@ die;
 }
 
 print "Production version backed up successfully. Proceeding...\n";
+}else{
+print "Object does not exist in production. Proceeding...\n";
+}
 
-#$sqlError = `. /opt/sap/SYBASE.sh
-#isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$testserver -D$database -i/home/sybase/db_backups/toProd/$database-$proc.sql`;
+$sqlError=`. /opt/sap/SYBASE.sh
+/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$testserver in /opt/sap/db_backups/toProd/$database-$proc.sql $database` ;
 
-$sqlError=`. /opt/sap/SYBASE.sh 
-/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$testserver in /home/sybase/db_backups/toProd/$database-$proc.sql $database` ;
-
-if ($sqlError =~ /Msg/ || $sqlError =~ /Error/ || $ddlgenOp =~ /ERROR/){
+if ($sqlError =~ /Error|ERROR|not found|Msg/){
 print $sqlError."\n";
 
 $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
-Subject: Errors - copy_proc_to_prod at $finTime - test script deploy 
+Subject: Errors - copy_proc_to_prod at $finTime - test script deploy
 
 $sqlError
 
@@ -103,14 +147,10 @@ die;
 
 print "Script tested successfully. Proceeding...\n";
 
-#$sqlError = `. /opt/sap/SYBASE.sh
-#isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -D$database -i/home/sybase/db_backups/toProd/$database-$proc.sql`;
+$sqlError=`. /opt/sap/SYBASE.sh
+/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver in /opt/sap/db_backups/toProd/$database-$proc.sql $database` ;
 
-$sqlError=`. /opt/sap/SYBASE.sh 
-/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver in /home/sybase/db_backups/toProd/$database-$proc.sql $database` ;
-
-
-if ($sqlError =~ /Msg/ || $sqlError =~ /Error/ || $ddlgenOp =~ /ERROR/){
+if ($sqlError =~ /Error|ERROR|not found|Msg/){
 print $sqlError."\n";
 
 $finTime = localtime();

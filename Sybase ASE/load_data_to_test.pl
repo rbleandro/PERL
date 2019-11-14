@@ -22,10 +22,10 @@ $currTime = localtime();
 $startHour=sprintf('%02d',((localtime())[2]));
 $startMin=sprintf('%02d',((localtime())[1]));
 
-$deleteoldfiles =`find /home/sybase/db_backups/ -mindepth 1 -mtime +7 -delete`;
+$deleteoldfiles =`find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
 
 $bcpError=`. /opt/sap/SYBASE.sh 
-/opt/sap/OCS-16_0/bin/bcp $database..$table out /home/sybase/db_backups/$database\_$table\_backup.dat -n -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver`;
+/opt/sap/OCS-16_0/bin/bcp $database..$table out /opt/sap/db_backups/$database\_$table\_backup.dat -n -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver`;
 
 if ($bcpError =~ /Error/ || $bcpError =~ /Msg/){
 print $bcpError."\n";
@@ -67,7 +67,7 @@ die;
 }
 
 $bcpError=`. /opt/sap/SYBASE.sh 
-/opt/sap/OCS-16_0/bin/bcp $database..$table in /home/sybase/db_backups/$database\_$table.dat -n -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver`;
+/opt/sap/OCS-16_0/bin/bcp $database..$table in /opt/sap/db_backups/$database\_$table.dat -n -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver`;
 
 if ($bcpError =~ /Error/ || $bcpError =~ /Msg/){
 print $bcpError."\n";

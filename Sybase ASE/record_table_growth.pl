@@ -60,8 +60,8 @@ exec evkm_data..record_table_growth
 go
 exec linehaul_data..record_table_growth
 go
-exec lm_stage..record_table_growth
-go
+--exec lm_stage..record_table_growth
+--go
 exec pms_data..record_table_growth
 go
 exec rate_update..record_table_growth
