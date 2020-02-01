@@ -68,6 +68,7 @@ from lmscan..tttl_ma_barcode mb
 join cpscan..tttl_ev_event_hospital ev (index tttl_ev_nc_rssps) on (mb.reference_num=ev.alt_barcode)
 where mb.inserted_on between \@start_date and \@end_date
 
+
 update lmscan..tttl_ev_event_rawbc set company_code ='LM'
 from lmscan..tttl_ev_event_rawbc r inner join #delete_this d on r.reference_num = d.reference_num
 where d.BTACC = 'LOOMIS'
@@ -105,13 +106,17 @@ join cpscan..tttl_pr_pickup_record_hospital lm on (lm.conv_time_date=m.conv_time
 print "Deleting from COSDataCapture_hospital"
 delete cpscan..COSDataCapture_hospital
 from #delete_this m
-join cpscan..COSDataCapture_hospital lm on (lm.alt_barcode=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
+join cpscan..COSDataCapture_hospital lm on (lm.reference_num=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
     
 print "Deleting from PictureDataCapture_hospital"
 delete cpscan..PictureDataCapture_hospital
 from #delete_this m
 join cpscan..PictureDataCapture_hospital lm
-on (lm.alt_barcode=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
+on 
+(
+    lm.reference_num=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num
+    and lm.service_type='' and lm.shipper_num='' -- Required for the index in PictureDataCapture
+)
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -141,10 +146,10 @@ where
 
 create clustered index idx_id on #missing_ev (id)
 
-/* 
-* Loop through the missing events, and start inserting the important rows
-* (this is necessary because tttl_ev_event has a trigger that only fires for a single row, so each row needs to be inserted seperately)
-*/
+
+-- Loop through the missing events, and start inserting the important rows
+-- (this is necessary because tttl_ev_event has a trigger that only fires for a single row, so each row needs to be inserted seperately)
+
 
 -- Prep the vars
 declare 
@@ -159,7 +164,7 @@ select
 -- Perform the loop
 while (\@i <= \@max_i)
 begin
-	/* Log the current row, to help the DBAs troubleshoot bad data */
+	-- Log the current row, to help the DBAs troubleshoot bad data 
 	select
 		\@log_ctd = conv_time_date,
 		\@log_en	 = employee_num
@@ -172,7 +177,7 @@ begin
 	print "Using cpscan..tttl_ev_event_hospital where conv_time_date='%1!' and employee_num='%2!'", \@log_ctd, \@log_en
 	
 	
-	/* Insert the event into cpscan */
+	-- Insert the event into cpscan 
 	print "Inserting into tttl_ev_event"
 	insert cpscan..tttl_ev_event
 		(reference_num, service_type, shipper_num, conv_time_date, employee_num, status, scan_time_date, terminal_num, pickup_shipper_num, postal_code, additional_serv_flag, mod10b_fail_flag, multiple_barcode_flag, multiple_shipper_flag, comments_flag, inserted_on_cons, updated_on_cons)
@@ -188,7 +193,7 @@ begin
 		m.id = \@i
 		
 	
-	/* Insert the tttl_dr_delivery_record into cpscan */
+	-- Insert the tttl_dr_delivery_record into cpscan 
 	print "Inserting into tttl_dr_delivery_record"
 	if not exists (select * from #missing_ev m join cpscan..tttl_dr_delivery_record lm on (m.conv_time_date=lm.conv_time_date and m.employee_num=lm.employee_num) where m.id = \@i)
 	begin
@@ -208,7 +213,7 @@ begin
 	
 	
 	
-	/* Insert the tttl_dc_delivery_comment into cpscan */
+	-- Insert the tttl_dc_delivery_comment into cpscan 
 	print "Inserting into tttl_dc_delivery_comment"
 	if not exists (select * from #missing_ev m join cpscan..tttl_dc_delivery_comment lm on (m.scan_time_date=lm.scan_time_date and m.employee_num=lm.employee_num) where m.id = \@i)
 	begin
@@ -226,7 +231,7 @@ begin
 	end
 	
 	
-	/* Insert the tttl_ex_exception_comment into cpscan */
+	-- Insert the tttl_ex_exception_comment into cpscan 
 	print "Inserting into tttl_ex_exception_comment"
 	if not exists (select * from #missing_ev m join cpscan..tttl_ex_exception_comment lm on (lm.service_type=m.h_st and lm.shipper_num=m.h_sn and lm.reference_num=m.h_rn and m.scan_time_date=lm.scan_time_date and m.employee_num=lm.employee_num) where m.id = \@i)
 	begin
@@ -245,7 +250,7 @@ begin
 	end
 	
 		
-	/* Insert the tttl_ps_pickup_shipper into cpscan */
+	-- Insert the tttl_ps_pickup_shipper into cpscan 
 	print "Inserting into tttl_ps_pickup_shipper"
 	if not exists (select * from #missing_ev m join cpscan..tttl_ps_pickup_shipper lm on (lm.conv_time_date=m.conv_time_date and lm.employee_num=m.employee_num) where m.id = \@i)
 	begin
@@ -263,7 +268,7 @@ begin
 	end
 	
 	
-	/* Insert the tttl_pr_pickup_record into cpscan */
+	-- Insert the tttl_pr_pickup_record into cpscan 
 	print "Inserting into tttl_pr_pickup_record"
 	if not exists (select * from #missing_ev m join cpscan..tttl_pr_pickup_record lm on (lm.conv_time_date=m.conv_time_date and lm.employee_num=m.employee_num) where m.id = \@i)
 	begin
@@ -282,7 +287,7 @@ begin
 	end
 	
 	
-	/* Insert the COSDataCapture into cpscan */
+	-- Insert the COSDataCapture into cpscan 
 	print "Inserting into COSDataCapture"
 	insert cpscan..COSDataCapture
 		(service_type, reference_num, shipper_num, scan_time_date, employee_num, COSSignature, COSPicture, inserted_on_cons, updated_on_cons)
@@ -293,17 +298,12 @@ begin
 	from
 		#missing_ev m
 		join cpscan..COSDataCapture_hospital lm
-			on (lm.alt_barcode=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
-		join cpscan..tttl_ma_barcode mb
-			on (mb.service_type=m.h_st and mb.shipper_num=m.h_sn and mb.reference_num=m.h_rn)
-		join cpscan..tttl_ma_shipment ms
-			on (mb.manlink=ms.manlink and mb.shipment_id=ms.shipment_id)
+			on (lm.reference_num=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
 	where
 		m.id = \@i
-		and ms.cos_flag='Y'	-- Make sure the shipment is a COS shipment
 		
 		
-	/* Insert the PictureDataCapture into cpscan */
+	-- Insert the PictureDataCapture into cpscan 
 	print "Inserting into PictureDataCapture"
 	insert cpscan..PictureDataCapture
 		(status, service_type, reference_num, shipper_num, scan_time_date, employee_num, PDC_picture, inserted_on_cons, updated_on_cons)
@@ -315,7 +315,10 @@ begin
 	from
 		#missing_ev m
 		join cpscan..PictureDataCapture_hospital lm
-			on (lm.alt_barcode=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
+			on (
+				lm.reference_num=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num
+				and lm.service_type='' and lm.shipper_num='' -- Required for the index in PictureDataCapture
+			)
 	where
 		m.id = \@i
 
@@ -360,14 +363,17 @@ join cpscan..tttl_pr_pickup_record_hospital lm on (lm.conv_time_date=m.conv_time
 print "Cleaning COSDataCapture_hospital"
 delete cpscan..COSDataCapture_hospital
 from #missing_ev m
-join cpscan..COSDataCapture_hospital lm on (lm.alt_barcode=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
+join cpscan..COSDataCapture_hospital lm on (lm.reference_num=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
     
 print "Cleaning PictureDataCapture_hospital"
 delete cpscan..PictureDataCapture_hospital
 from #missing_ev m
 join cpscan..PictureDataCapture_hospital lm
 on 
-(lm.alt_barcode=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
+(
+    lm.reference_num=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num
+    and lm.service_type='' and lm.shipper_num='' -- Required for the index in PictureDataCapture
+)
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -------------------------------------------- CLEANING UP THE HOSPITAL OF RECORDS CLASSIFIED AS LOOMIS PIECES ----------------------------------
@@ -387,7 +393,7 @@ begin
     from #delete_loomis_pieces e inner join lmscan..tttl_ev_event_rawbc r on r.raw_barcode = e.reference_num
     where company_code <> 'LM'
     
-    select \@count=@\@rowcount
+    select \@count=\@\@rowcount
 end
 
 print "Deleting from tttl_dr_delivery_record_hospital"
@@ -422,7 +428,7 @@ plan '(use optgoal allrows_oltp)'
 print "Deleting from COSDataCapture_hospital"
 delete cpscan..COSDataCapture_hospital
 from #delete_loomis_pieces m
-join cpscan..COSDataCapture_hospital lm on (lm.alt_barcode=convert(varchar(50), m.reference_num) and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
+join cpscan..COSDataCapture_hospital lm on (lm.reference_num=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
 plan '(use optgoal allrows_oltp)'
     
 print "Deleting from PictureDataCapture_hospital"
@@ -430,7 +436,10 @@ delete cpscan..PictureDataCapture_hospital
 from #delete_loomis_pieces m
 join cpscan..PictureDataCapture_hospital lm
 on 
-(lm.alt_barcode=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
+(
+    lm.reference_num=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num
+    and lm.service_type='' and lm.shipper_num='' -- Required for the index in PictureDataCapture
+)
 plan '(use optgoal allrows_oltp)'
 
 print "Deleting from tttl_ev_event_hospital"
@@ -483,7 +492,7 @@ plan '(use optgoal allrows_oltp)'
 print "Deleting from COSDataCapture_hospital"
 delete cpscan..COSDataCapture_hospital
 from #delete_mds_billed_pieces m
-join cpscan..COSDataCapture_hospital lm on (lm.alt_barcode=convert(varchar(50), m.reference_num) and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
+join cpscan..COSDataCapture_hospital lm on (lm.reference_num=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
 plan '(use optgoal allrows_oltp)'
     
 print "Deleting from PictureDataCapture_hospital"
@@ -491,7 +500,10 @@ delete cpscan..PictureDataCapture_hospital
 from #delete_mds_billed_pieces m
 join cpscan..PictureDataCapture_hospital lm
 on 
-(lm.alt_barcode=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num)
+(
+    lm.reference_num=m.reference_num and lm.scan_time_date=m.scan_time_date and lm.employee_num=m.employee_num
+    and lm.service_type='' and lm.shipper_num='' -- Required for the index in PictureDataCapture
+)
 plan '(use optgoal allrows_oltp)'
 
 print "Deleting from tttl_ev_event_hospital"

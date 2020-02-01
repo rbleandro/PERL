@@ -15,48 +15,67 @@
 ##########################################################################################################################################################
 
 #Usage Restrictions
-if ($#ARGV < 2){
-   print "Usage: copy_data_to_test.pl database table option. Example: copy_data_to_test.pl canada_post address bcl rleandro \n";
-   print "The third parameter will control the script behavior. Type b to bcp out only, bc to bcp out and copy the generated file to the destination server, bcl to do everything else plus load the data at the destination server.";
-   print "The fourth parameter tells the script the mail recipient in case of any errors. If not provided it defaults to the DBA mail group";
+use Sys::Hostname;
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $finTime = localtime();
+my $database = "";
+my $table = "";
+my $action = "";
+my @prodline="";
+my $scpError="";
+
+GetOptions(
+    'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'action|a=s' => \$action,
+	'db|d=s' => \$database,
+	'table|t=s' => \$table
+) or die "Usage: $0 --db|d svp_cp --table|t svp_stats --skipcheckprod|s 0 --to|r rleandro --action|a bcl\n";
+
+if ($database eq "" || $table eq "" || $action eq "" ){
+   print "Usage: copy_data_to_test.pl --db svp_cp --table svp_stats --skipcheckprod 0 --to rleandro --action bcl.\n";
+   print "The parameter --action will control the script behavior. Type b to bcp out only, bc to bcp out and copy the generated file to the destination server, bcl to do everything else plus load the data at the destination server.";
+   print "The parameter --to tells the script the mail recipient in case of any errors. If not provided it defaults to the DBA mail group";
    die "Script Executed With Wrong Number Of Arguments\n";
 }
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
+
+if ($skipcheckprod == 0){
+	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
+	while (<PROD>){
+		@prodline = split(/\t/, $_);
+		$prodline[1] =~ s/\n//g;
+	}
+	close PROD;
+	if ($prodline[1] eq "0" ){
+		print "standby server \n";
+		die "This is a stand by server\n";
+	}
 }
 
-use Sys::Hostname;
-#$prodserver = hostname();
-$testserver = '10.3.1.165';
+my $prodserver = hostname();
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
+my $testserver = '10.3.1.165';
 
 #Set starting variables
-$currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
+my $currTime = localtime();
+my $startHour=sprintf('%02d',((localtime())[2]));
 #$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
+my $startMin=sprintf('%02d',((localtime())[1]));
 
 print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 `find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
 
-$database = $ARGV[0];
-$table = $ARGV[1];
-$action = $ARGV[2];
-
-my $dba = $ARGV[3];
-if (defined $dba) {
-    $mail=$dba;
-} else {
-    $mail='CANPARDatabaseAdministratorsStaffList';
-}
-
-$bcpError=`/opt/sap/OCS-16_0/bin/bcp $database..$table out /opt/sap/db_backups/$database\_$table.dat -n -S CPDB1 -U sa -P\`/opt/sap/cron_scripts/getpass.pl sa\``;
+my $bcpError=`/opt/sap/OCS-16_0/bin/bcp $database..$table out /opt/sap/db_backups/$database\_$table.dat -n -S CPDB1 -U sa -P\`/opt/sap/cron_scripts/getpass.pl sa\``;
 
 if ($bcpError =~ /Error/ || $bcpError =~ /Msg/){
 print $bcpError."\n";
@@ -74,7 +93,7 @@ die;
 }
 
 if ($action =~ /bc/){
-$scpError=`scp /opt/sap/db_backups/$database\_$table.dat sybase\@10.3.1.165:~/db_backups/`;
+$scpError=`scp /opt/sap/db_backups/$database\_$table.dat sybase\@10.3.1.165:/opt/sap/db_backups/`;
 
 $scpError = $? >> 8;
 if ($scpError != 0) {
@@ -92,9 +111,8 @@ die;
 }
 }
 
-
 if ($action =~ /bcl/){
-$load_msgs = `ssh $testserver /opt/sap/cron_scripts/load_data_to_test.pl $database $table`;
+my $load_msgs = `ssh $testserver /opt/sap/cron_scripts/load_data_to_test.pl $database $table $mail`;
 print "$load_msgs \n";
 
 if ($load_msgs =~ /Error/ || $load_msgs =~ /Msg/){
