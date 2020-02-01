@@ -69,7 +69,7 @@ while (<ERRORLOG>){
       $tooManyErrors += 1;
       $secondLine = $_;
       print "$firstLine$secondLine\n";
-      if(($tooManyErrors < 5 ) && ($firstLine !~ /Deadlock/ || $firstLine !~ /IGNORE/i || $firstLine !~ /WARN/i || $firstLine !~ /Ambiguous/ || $secondLine !~ /IGNORE/i || $secondLine !~ /WARN/i) && ($firstLine !~ /WARNING #5185/ && $secondLine !~ /WARNING #5185/) && ($firstLine !~ /WARNING #24068/ && $secondLine !~ /WARNING #24068/)){
+      if(($tooManyErrors < 5 ) && ($firstLine !~ /Deadlock/ || $firstLine !~ /IGNORE/i || $firstLine !~ /WARN/i || $firstLine !~ /Ambiguous/ || $secondLine !~ /IGNORE/i || $secondLine !~ /WARN/i) && ($firstLine !~ /WARNING #5185/ && $secondLine !~ /WARNING #5185/) && ($firstLine !~ /WARNING #24068/ && $secondLine !~ /WARNING #24068/) && ($firstLine !~ /Message: 1708/ && $secondLine !~ /Message: 1708/)){
       `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
 Subject: $server SRS Error Alert
