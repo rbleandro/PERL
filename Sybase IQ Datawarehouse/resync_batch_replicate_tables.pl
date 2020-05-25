@@ -33,7 +33,7 @@ print "***Initiating IQ procedure resync_batch_replicate_tables At:".localtime()
 $dbsqlError = `. /opt/sybase/IQ-16_0/IQ-16_0.sh
 dbisql -c "uid=DBA;pwd=\`/opt/sybase/cron_scripts/getpass.pl DBA\`" -host localhost -port 2638 -nogui -onerror exit 'execute resync_batch_replicate_tables' 2>&1`;
 
-if ($dbsqlError =~ /Error/ || $dbsqlError =~ /Message/){
+if ($dbsqlError =~ /Error/ || $dbsqlError =~ /Message/ || $dbsqlError =~ /Could not/){
       print "Messages From resync_batch_replicate_tables...\n";
       print "$dbsqlError\n";
 

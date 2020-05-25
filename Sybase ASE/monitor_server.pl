@@ -1,16 +1,14 @@
 #!/usr/bin/perl
 
 #Script:   	This script monitor CPU load, alerting when above 95%. This script relies on the sqsh component. Consult the sharepoint documentation to see how to install it.
-#
 #Author:   		Rafael Leandro
-#Date			Name			Description
-#---------------------------------------------------------------------------------
 #09/22/2018     Rafael Leandro  Created
 #Aug 10 2019	Rafael Leandro	1.Reformatting of the sql queries and perl commands. Elimination of obsolete code.
 #								2.Review of thread report query
 #								3.Changed the script to use sqsh when sending the report (better formatting)
 #								4.Parameterized the alert threshold (check variable $tcpu) and the mail recipient
-#16/08/19   	Rafael Leandro  Added html support for a better look in the final email.
+#Aug 08 2019   	Rafael Leandro  Added html support for a better look in the final email.
+#May 19 2020   	Rafael Leandro  Changed the query to get the number of sessions per application to be more accurate and informative.
 
 #Usage Restrictions
 use Sys::Hostname;
@@ -54,7 +52,7 @@ $prodserver = "CPSYBTEST";
 #Execute CPU Monitoring
 
 my $error = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b<<EOF 2>&1
+isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -n -b<<EOF 2>&1
 set nocount on
 set proc_return_status off
 go
@@ -83,25 +81,43 @@ $cpu=$error;
 
 if ($cpu > $tcpu)
 {
+	
+my $htmlmail="<html>
+<head>
+<title>Sybase CPU load Alert</title>
+<style>
+table {
+  border-collapse: collapse;
+}
+table, th, td {
+  border: 1px solid black;
+}
+td {
+  padding: 5px;
+  text-align: left;
+}
+th {
+  background-color: #99bfac;
+  color: white;
+  padding: 5px;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+<p>CPU now (%): $cpu. Please check. Below is a report of number of active sessions per application. Execute the queries at the end to see server trends and historical data.</p>
+<table>";
 
 my $NumConnections = `. /opt/sap/SYBASE.sh
-isql -w900 -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b<<EOF 2>&1
+isql -w900 -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -n -b<<EOF 2>&1
 set nocount on
 go
-SELECT
-CASE sp.clienthostname WHEN '' THEN isnull(sp.hostname,sp.ipaddr) WHEN NULL THEN isnull(sp.hostname,sp.ipaddr) ELSE sp.clienthostname END 'host','#',
-CASE clientapplname WHEN '' THEN program_name WHEN NULL THEN program_name ELSE clientapplname END 'program','#',
-SUSER_NAME(suid) as username,'#',
-count(spid) as 'NumSessions'
-FROM master.dbo.sysprocesses sp
-where 1=1
-and status not in ('background')
-and cmd not in ('HK WASH','HK GC','HK CHORES','NETWORK HANDLER','MEMORY TUNE','DEADLOCK TUNE','SHUTDOWN HANDLER','KPP HANDLER','ASTC HANDLER','CHECKPOINT SLEEP','PORT MANAGER','AUDIT PROCESS','CHKPOINT WRKR','LICENSE HEARTBEAT','JOB SCHEDULER')
-and status <> 'recv sleep'
-group by CASE clientapplname WHEN '' THEN program_name WHEN NULL THEN program_name ELSE clientapplname END, SUSER_NAME(suid)
-,CASE sp.clienthostname WHEN '' THEN isnull(sp.hostname,ipaddr) WHEN NULL THEN isnull(sp.hostname,ipaddr) ELSE sp.clienthostname END,
-SUSER_NAME(suid) 
-order by count(spid) desc
+Select count(a.SPID) as '#Sessions','###',p.Login,'###',case when p.ClientApplName is null then isnull(p.Application,sp.ipaddr) else p.ClientApplName end as Application,'###',p.DBName,'###'--, p.Command
+, sum(a.CPUTime) as CumulativeCPU,'###', sum(a.PhysicalReads) as CumulativePhyReads,'###', sum(a.LogicalReads) as CumulativeLogReads
+From master..monProcessActivity a, master..monProcess p, master..monProcessStatement s,master.dbo.sysprocesses sp
+Where a.SPID = p.SPID and a.KPID = p.KPID and a.SPID = s.SPID and a.KPID = s.KPID and p.SPID=sp.spid and p.KPID=sp.kpid
+group by p.Login,case when p.ClientApplName is null then isnull(p.Application,sp.ipaddr) else p.ClientApplName end,p.DBName--, p.Command
+order by sum(a.CPUTime) desc
 go
 exit
 EOF
@@ -121,11 +137,11 @@ die "Email sent (get sessions per app)";
 $error=~s/\t//g;
 
 my @results="";
-my $htmltable="<tr><td>host</td><td>program</td><td>username</td><td>NumSessions</td></tr>";
+my $htmltable="<th>#Sessions</th><th>Login</th><th>Application</th><th>DBName</th><th>CumulativeCPU</th><th>CumulativePhyReads</th><th>CumulativeLogReads</th>";
 my $td="";
 @results = split(/\n/,$NumConnections);
 for (my $i=0; $i <= $#results; $i++){
-	my @line = split(/#/,$results[$i]);
+	my @line = split(/###/,$results[$i]);
 	$htmltable.="<tr>";
 	for (my $l=0; $l <= $#line; $l++){
 		$td.="<td>" . $line[$l] . "</td>";
@@ -135,26 +151,26 @@ for (my $i=0; $i <= $#results; $i++){
 	$td="";
 }
 
+$htmlmail .= $htmltable . "</table><br>\n";
+
+$htmlmail.="<table><th>Active Process History</th><tr><td>select top 100 * from dba.dbo.dba_mon_processes where snapTime=(select max(snapTime) from dba.dbo.dba_mon_processes) order by program</td></tr></table><br>
+<table><th>CPU Load History</th><tr><td>select top 10 * from dba.dbo.server_health order by SnapTime desc</td></tr></table><br>
+<table><th>Heaviest Queries by CPU</th><tr><td>Select top 20 a.SPID, p.Login,case when p.ClientApplName is null then isnull(p.Application,sp.ipaddr) else p.ClientApplName end as Appication,p.DBName, p.Command, a.CPUTime, a.PhysicalReads, a.LogicalReads
+From master..monProcessActivity a, master..monProcess p, master..monProcessStatement s,master.dbo.sysprocesses sp
+Where a.SPID = p.SPID and a.KPID = p.KPID and a.SPID = s.SPID and a.KPID = s.KPID and p.SPID=sp.spid and p.KPID=sp.kpid
+Order by a.CPUTime desc
+go</td></tr></table><br>
+<p>Script's name: $0. Current threshold: $tcpu%.</p>
+</body>
+</html>\n";
+
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
 Subject: Server load alert!!!
 Content-Type: text/html
 MIME-Version: 1.0
 
-<html>
-<head>
-<title>HTML E-mail</title>
-</head>
-<body>
-<p>CPU now (%): $cpu. Please check. Below is a report of number of active sessions per application. Execute the queries at the end to see server trends and historical data.</p>
-<table border="1">
-$htmltable
-</table>
-<p>select top 100 * from dba.dbo.dba_mon_processes where snapTime=(select max(snapTime) from dba.dbo.dba_mon_processes) order by program</p>
-<p>select top 10 * from dba.dbo.server_health order by SnapTime desc</p>
-<p>Script's name: $0. Current threshold: $tcpu%.</p>
-</body>
-</html>
+$htmlmail
 EOF
 `;
 }

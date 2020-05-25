@@ -42,7 +42,7 @@ print "MPR Payroll StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 #Uploading data...
 if (-e "/opt/sap/bcp_data/MPR_Export_Hourly_Payroll_regex.csv"){
 $bcp_msg = `. /opt/sap/SYBASE.sh
-bcp mpr_data..mpr_hourly_union_time in /opt/sap/bcp_data/MPR_Export_Hourly_Payroll_regex.csv -Usa -S$prodserver -P\`/opt/sap/cron_scripts/getpass.pl sa\` -c -t"," --skiprows 2`;
+bcp mpr_data..mpr_hourly_union_time in /opt/sap/bcp_data/MPR_Export_Hourly_Payroll_regex.csv -Ucronmpr -S$prodserver -P\`/opt/sap/cron_scripts/getpass.pl sa\` -c -t"," --skiprows 2`;
 }else{
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
@@ -79,7 +79,7 @@ die "Can't Continue. BCP errors.\n\n";
 }
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
 use mpr_data
 go
 set clientapplname \'MPR_Export_Hourly_Payroll\'

@@ -772,15 +772,13 @@ $sqlError
 EOF
 `;
 }
-
 ######################3#
-print " Dynamite account Requested By Heather On June 4th, 2018... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
-
+print " Boathouse account Requested By Heather On June 4th, 2018... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
-select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '04952'
+select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05106'
 go
 delete canship_webdb..XCUSTLIST_DATA
 from canship_webdb..XCUSTLIST_DATA, #cmt_accts
@@ -788,25 +786,19 @@ where ShipperID = account_num
 go
 insert canship_webdb..XCUSTLIST_DATA
 select account_num,LoginName,CustID,Name,Address1,Address2,Address3,Attention,City,Prov,PostalCode,PhoneNumber,EMail,POBox,GroupID,RefType,Reference,CostCentre,GFlag,QFlag,Deleted,SendEMail,FaxNumber,Special,0,null
-from canship_webdb..XCUSTLIST_DATA,#cmt_accts  where ShipperID='42204952'
+from canship_webdb..XCUSTLIST_DATA,#cmt_accts  where ShipperID='42205106'
 go
 exit
 EOF
 `;
-
 print $sqlError."\n";
-
-
 $finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From Dynamite address book nightly refresh...\n";
-      print "$sqlError\n";
-
+if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
+print "Messages From Boathouse address book nightly refresh...\n";
+print "$sqlError\n";
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Dynamite Accounts Errors at $finTime
-
+Subject: Boathouse Accounts Errors at $finTime
 $sqlError
 EOF
 `;

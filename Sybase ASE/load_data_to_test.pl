@@ -12,6 +12,7 @@
 
 $database = $ARGV[0];
 $table = $ARGV[1]; 
+$mail = $ARGV[2]; 
 
 #Usage Restrictions
 use Sys::Hostname;
@@ -33,7 +34,7 @@ print $bcpError."\n";
 $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+To: $mail\@canpar.com
 Subject: Errors - copy_data_to_test at $finTime
 
 $bcpError
@@ -57,7 +58,7 @@ print $sqlError."\n";
 $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+To: $mail\@canpar.com
 Subject: Errors - dump_databases_to_test at $finTime
 
 $sqlError
@@ -75,7 +76,7 @@ print $bcpError."\n";
 $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
+To: $mail\@canpar.com
 Subject: Errors - copy_data_to_test at $finTime
 
 $bcpError

@@ -50,6 +50,7 @@ if ($currHour == "02"  && $currMin == "00"){
 `rm -fr /tmp/failedLogin/\*`;
 }
 
+#&& ($firstLine !~ /'tempdb1'/) && ($secondLine !~ /'tempdb1'/) && ($firstLine !~ /killed by Hostname/)
 #Scanning the errorlog...
 $getNextLine = 0;
 $tooManyErrors = 0;
@@ -58,7 +59,7 @@ while (<ERRORLOG>){
       $tooManyErrors += 1;
       $secondLine = $_;
       print "$firstLine$secondLine\n";
-      if(($tooManyErrors < 5 ) && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/) && ($firstLine !~ /Type '1b' not allowed before login/)){
+      if(($tooManyErrors < 5 ) && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/) && ($firstLine !~ /Type '1b' not allowed before login/) && ($firstLine !~ /Error: 632/) ){
       print "Error Found\n";
 
    `/usr/sbin/sendmail -t -i <<EOF
@@ -147,7 +148,7 @@ print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
 
 
 
-         if($tooManyErrors == 5 && ($firstLine !~ /Login failed/)){
+         if(($tooManyErrors == 5) && ($firstLine !~ /Login failed/)  && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/) && ($firstLine !~ /Type '1b' not allowed before login/) && ($firstLine !~ /Error: 632/) ){
          `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
 Subject: $prodserver Error Alert
@@ -164,7 +165,7 @@ print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
    }
    if(/$currDate/){
       if (/$currHour\:$currMin\:/){
-         if((/cease/ || /webtest/ || /Error/ || /timeout/i || /could not/i || /sleeping/i || /critically/i || /failed/i || /degradation/i || /deadlock/i || /stack trace/i || /fatal/i || /critical/i || /severity\: [10..26]/i)&&(!/1608/ && !/1621/ && !/Ct-library/ && !/Type '1b' not allowed before login/)){
+         if((/cease/ || /webtest/ || /Error/ || /timeout/i || /could not/i || /sleeping/i || /critically/i || /failed/i || /degradation/i || /deadlock/i || /stack trace/i || /fatal/i || /critical/i || /severity\: [10..26]/i)&&(!/1608/ && !/1621/ && !/Ct-library/ && !/Type '1b' not allowed before login/ && !/'tempdb1'/  && !/killed by Hostname/  && !/Error: 632/)){
             #print "Found it\n";
 	    $firstLine = $_;
             $getNextLine = 1;
@@ -177,9 +178,9 @@ print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
 if($getNextLine == 1){
       $tooManyErrors += 1;
       print "$firstLine\n";
-      if(($tooManyErrors < 5)){#&& ($firstLine !~ /Deadlock/)){
+      if(($tooManyErrors < 5) && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/) && ($firstLine !~ /Type '1b' not allowed before login/) && ($firstLine !~ /Error: 632/) ){
       print "Error Found\n";
-         if ($firstLine !~ /Login failed/){
+         if (($firstLine !~ /Login failed/)  && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/) && ($firstLine !~ /Type '1b' not allowed before login/) && ($firstLine !~ /Error: 632/) ){
       `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
 Subject: $prodserver Error Alert
@@ -227,7 +228,7 @@ print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
          } # End of syslog logging
 
       }else{
-         if($tooManyErrors == 5 && ($firstLine !~ /Login failed/)){
+         if(($tooManyErrors == 5) && ($firstLine !~ /Login failed/)  && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/) && ($firstLine !~ /Type '1b' not allowed before login/) && ($firstLine !~ /Error: 632/) ){
          `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
 Subject: $prodserver Error Alert
@@ -243,6 +244,8 @@ print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
    }
 
 close ERRORLOG;
+#End of log verification
+
 #Check if the server is still up
 $isServerUp =`ps -ef|grep sybase|grep dataserver|grep $prodserver`;
 if($isServerUp){

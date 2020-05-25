@@ -86,20 +86,6 @@ EOF
 
 }
 else{
-if ($space_left <= 500){
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Segment: $segname in Database: $dbname may be FULL!!!
-
-Only $space_left MB left
-
-Please contact DBAs for support.
-
-Dated: $currDate\--$currHour\:$currMin
-EOF
-`;
-}else{
-
 $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF 2>&1
 use master
@@ -161,5 +147,5 @@ EOF
 }
 }
 }
-}
+
 

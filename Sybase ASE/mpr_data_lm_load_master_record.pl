@@ -1,15 +1,10 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Script:   This script loads data into master_record on monthly              #
-#                                                                            #
-#Author:	Amer Khan						     #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#                                                                            #
-#Feb 29 2016	Amer Khan	Created					     #
-##############################################################################
+#Script:        This script loads data into master_record on monthly
+#Author:	Amer Khan
+#Date           Name            Description
+#Feb 29 2016    Amer Khan       Created
+#Apr 30 2020    Rafael Bahia    Changed db conn to use cronmpr user to allow separate tempdb usage
 
 #Usage Restrictions
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
@@ -27,7 +22,6 @@ $prodserver = hostname();
 #Set starting variables
 $currTime = localtime();
 $startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
 $startMin=sprintf('%02d',((localtime())[1]));
 
 $my_pid = getppid();
@@ -47,14 +41,14 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF 2>&1
 use mpr_data_lm
-go    
-declare \@fiscal int   
+go
+declare \@fiscal int
 select \@fiscal= (period - 1) from cmf_data_lm..tot_pe where year =year(getdate()) and getdate() between start_date and end_date
 if \@fiscal = 0 select \@fiscal = 12
 exec load_master_record \@fiscal
-go 
+go
 exit
 EOF
 `;

@@ -8,14 +8,7 @@
 ####Push All Daily Logs To Central Log Server
 ###00 09 * * * /opt/sap/cron_scripts/cron_jobs_system_logger.pl > /opt/sap/cron_scripts/cron_logs/cron_jobs_system_logger.log 2>&1
 #### Backup cronjobs....
-00 09 * * 0 /opt/sap/cron_scripts/backup_cron_jobs.sh > /opt/sap/cron_scripts/cron_logs/backup_cron_jobs.log 2>&1
-00 09 * * * /opt/sap/cron_scripts/backup_cron_jobs.sh > /opt/sap/cron_scripts/cron_logs/backup_cron_jobs_2.log 2>&1
-###
-###Load data into cmf_data from cmf tables in Btrieve
-35 01 * * 1-6 /opt/sap/cron_scripts/load_perv.sh > /opt/sap/cron_scripts/cron_logs/load_perv.log 2>&1
-00 08 * * 0 /opt/sap/cron_scripts/load_perv.sh > /opt/sap/cron_scripts/cron_logs/load_perv.log 2>&1
-30 02 * * * /opt/sap/cron_scripts/monitor_cmf_load.pl > /opt/sap/cron_scripts/cron_logs/monitor_cmf_load.log 2>&1
-35 02 * * * /opt/sap/cron_scripts/error_scan_cmf_load.pl > /opt/sap/cron_scripts/cron_logs/error_scan_cmf_load.log 2>&1
+00 09 * * * /opt/sap/cron_scripts/backup_cron_jobs.pl > /opt/sap/cron_scripts/cron_logs/backup_cron_jobs.log 2>&1
 ##
 ##Run sp_updRbc_cmf_scandates.pl
 00 09 * * * /opt/sap/cron_scripts/updRbc_cmf_scandates.pl > /opt/sap/cron_scripts/cron_logs/updRbc_cmf_scandates.log 2>&1
@@ -29,7 +22,11 @@
 ##
 00 23 * * 0 /opt/sap/cron_scripts/rm_cmfstats_coin_work_old_recs.pl > /opt/sap/cron_scripts/cron_logs/rm_cmfstats_coin_work_old_recs.log 2>&1
 ##
-###Update consignee_city in tttl_dr about every twenty minutes
+### Sync points_no_ranges between companies for interco points
+##
+##00 05 * * * /opt/sap/cron_scripts/pnr_sync_interco.pl > /opt/sap/cron_scripts/cron_logs/pnr_sync_interco.log 2>&1
+##
+##Update consignee_city in tttl_dr about every twenty minutes
 30 01 * * 1-5 /opt/sap/cron_scripts/update_consignee_city.pl > /opt/sap/cron_scripts/cron_logs/update_consignee_city.log 2>&1
 ##
 ###Purge/purge jobs
@@ -37,18 +34,18 @@
 00 03 * * * /opt/sap/cron_scripts/purge_trigger_tables_for_rep.pl > /opt/sap/cron_scripts/cron_logs/purge_trigger_table_for_rep.log 2>&1
 00 00 1 * * /opt/sap/cron_scripts/purge_disp_msg.pl > /opt/sap/cron_scripts/cron_logs/purge_disp_msg.log 2>&1
 30 08 * * 0 /opt/sap/cron_scripts/purge_tunnel_metrics.pl > /opt/sap/cron_scripts/cron_logs/purge_tunnel_metrics.log 2>&1
-42 03 * * 0 /opt/sap/purge_lmscan_tttl_pa_parcel_inserts.pl > /opt/sap/cron_scripts/cron_logs/purge_lmscan_tttl_pa_parcel_inserts.log 2>&1
-42 03 * * 0 /opt/sap/purge_cpscan_tttl_pa_parcel_inserts.pl > /opt/sap/cron_scripts/cron_logs/purge_cpscan_tttl_pa_parcel_inserts.log 2>&1
 05 03 * * * /opt/sap/cron_scripts/purge_COS_Inventory.pl > /opt/sap/cron_scripts/cron_logs/purge_COS_Inventory.log 2>&1
 55 03 * * * /opt/sap/cron_scripts/purge_lm_COS_Inventory.pl > /opt/sap/cron_scripts/cron_logs/purge_lm_COS_Inventory.log 2>&1
 00 02 * * * /opt/sap/cron_scripts/purge_tttl_ev_event_rawbc.pl > /opt/sap/cron_scripts/cron_logs/purge_tttl_ev_event_rawbc.log 2>&1
-00 02 * * 0 /opt/sap/cron_scripts/lm_stage_purge_data.pl > /opt/sap/cron_scripts/cron_logs/lm_stage_purge_data.log 2>&1
+40 02 * * * /opt/sap/cron_scripts/lm_stage_purge_data.pl > /opt/sap/cron_scripts/cron_logs/lm_stage_purge_data.log 2>&1
 00 02 * * * /opt/sap/cron_scripts/web_notify_purge.pl > /opt/sap/cron_scripts/cron_logs/web_notify_purge.log 2>&1
 00 01 * * 0 /opt/sap/cron_scripts/email_scan_purge.pl > /opt/sap/cron_scripts/cron_logs/email_scan_purge.log 2>&1
 12 01 * * 0 /opt/sap/cron_scripts/purge_svp_lm_svp_parcel.pl > /opt/sap/cron_scripts/cron_logs/purge_svp_lm_svp_parcel.log 2>&1
-##
-###Purge the ever growing log due to 1608 errors
-###30 01 * * * /opt/sap/cron_scripts/purge_CPDB2_error_log.sh > /opt/sap/cron_scripts/cron_logs/purge_CPDB2_error_log.log 2>&1
+00 04 * * * /opt/sap/cron_scripts/purge_packages_history_jcc.pl > /opt/sap/cron_scripts/cron_logs/purge_packages_history_jcc.log 2>&1
+00 04 * * * /opt/sap/cron_scripts/purge_lmscan_tttl_batchdown.pl > /opt/sap/cron_scripts/cron_logs/purge_lmscan_tttl_batchdown.log 2>&1
+00 04 * * * /opt/sap/cron_scripts/purge_cpscan_tttl_batchdown.pl > /opt/sap/cron_scripts/cron_logs/purge_cpscan_tttl_batchdown.log 2>&1
+00 03 * * * /opt/sap/cron_scripts/purge_rev_hist_bcxref2.pl > /opt/sap/cron_scripts/cron_logs/purge_rev_hist_bcxref2.log 2>&1
+00 04 * * * /opt/sap/cron_scripts/purge_cmf_data_lm_purge_pr_waybills_log.pl > /opt/sap/cron_scripts/cron_logs/purge_cmf_data_lm_purge_pr_waybills_log.log 2>&1
 ##
 ###Monitor Sybase Server Error Log
 * * * * * /opt/sap/cron_scripts/monitor_errorlog.pl > /opt/sap/cron_scripts/cron_logs/monitor_errorlog.log 2>&1
@@ -57,13 +54,49 @@
 00,30 * * * * /opt/sap/cron_scripts/monitor_sybase.pl > /opt/sap/cron_scripts/cron_logs/monitor_sybase.log 2>&1
 ##
 ###Monitor Blocks every 5 minutes
-00,05,10,15,20,25,30,35,40,45,50,55 07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23,00,01 * * 1-5 /opt/sap/cron_scripts/monitor_blocks.pl > /opt/sap/cron_scripts/cron_logs/monitor_blocks.log 2>&1
+*/5 * * * * /opt/sap/cron_scripts/monitor_blocks.pl > /opt/sap/cron_scripts/cron_logs/monitor_blocks.log 2>&1
 ##
 ###Monitor IOs every 10 minutes
-00,10,20,30,40,50 * * * 1-5 /opt/sap/cron_scripts/monitor_ios.pl > /opt/sap/cron_scripts/cron_logs/monitor_ios.log 2>&1
+*/10 * * * * /opt/sap/cron_scripts/monitor_ios.pl > /opt/sap/cron_scripts/cron_logs/monitor_ios.log 2>&1
+##
+###Monitor Server Health every 5 minutes
+*/5 * * * * /opt/sap/cron_scripts/monitor_server.pl -t 90 > /opt/sap/cron_scripts/cron_logs/monitor_server.log 2>&1
+##
+###Monitor Number of Server connections every 5 minutes
+##*/5 * * * * /opt/sap/cron_scripts/monitor_num_sessions.pl -t 4500 > /opt/sap/cron_scripts/cron_logs/monitor_num_sessions.log 2>&1
 ##
 ###Monitor cronjob for commented every day
 00 09 * * * /opt/sap/cron_scripts/monitor_cronjobs.pl crontab > /opt/sap/cron_scripts/cron_logs/monitor_cronjobs.log 2>&1
+##
+###Monitor memory usage
+*/5 * * * * /opt/sap/cron_scripts/monitor_memory_usage.pl > /opt/sap/cron_scripts/cron_logs/monitor_memory_usage.log 2>&1
+##
+###Monitor long running transactions
+*/30 07-23 * * * /opt/sap/cron_scripts/monitor_long_running_transactions.pl > /opt/sap/cron_scripts/cron_logs/monitor_long_running_transactions.log 2>&1
+##
+###Monitor database log size
+*/5 * * * * /opt/sap/cron_scripts/monitor_db_tlog_size.pl > /opt/sap/cron_scripts/cron_logs/monitor_db_tlog_size.log 2>&1
+##
+###Monitor failed jobs
+00 09 * * * /opt/sap/cron_scripts/monitor_failed_jobs.pl > /opt/sap/cron_scripts/cron_logs/monitor_failed_jobs.log 2>&1
+##
+###Monitor the space of key drives in the OS. Created after a problem with the Commvault agent that would hang and fill up the root drive.
+00 06 * * * /opt/sap/cron_scripts/monitor_disk_space.pl > /opt/sap/cron_scripts/cron_logs/monitor_disk_space.log 2>&1
+##
+###Monitor login and role assigment synchronization accross ASE servers.
+00 06 * * * /opt/sap/cron_scripts/monitor_login_synchronization.pl > /opt/sap/cron_scripts/cron_logs/monitor_login_synchronization.log 2>&1
+##
+###Monitor long running sessions 
+*/30 07-23 * * 1-5 /opt/sap/cron_scripts/monitor_long_running_sessions.pl > /opt/sap/cron_scripts/cron_logs/monitor_long_running_sessions.log 2>&1
+##
+###Collect heavy queries 
+*/30 * * * * /opt/sap/cron_scripts/monitor_heavy_queries.pl > /opt/sap/cron_scripts/cron_logs/monitor_heavy_queries.log 2>&1
+##
+###Send weekly server health report
+00 09 * * 0 /opt/sap/cron_scripts/server_health_report.pl > /opt/sap/cron_scripts/cron_logs/server_health_report.log 2>&1
+##
+###Monitor hub_db rows pending processing
+*/15 06-22 * * * /opt/sap/cron_scripts/monitor_hubdb_pending_rows.pl > /opt/sap/cron_scripts/cron_logs/monitor_hubdb_pending_rows.log 2>&1
 ##
 ###Frasier's Job To Update Libery DB through a stored proc
 00 03 * * 1-6 /opt/sap/cron_scripts/liberty_update.pl > /opt/sap/cron_scripts/cron_logs/liberty_update.log 2>&1
@@ -78,7 +111,7 @@
 ###Update Loomis points_ranges table
 30 23 * * * /opt/sap/cron_scripts/points_ranges_update_lm.pl > /opt/sap/cron_scripts/cron_logs/points_ranges_update_lm.log 2>&1
 ##
-###Update points_no_ranges table
+##Update points_no_ranges table
 00 01 * * * /opt/sap/cron_scripts/points_no_ranges_update.pl > /opt/sap/cron_scripts/cron_logs/points_no_ranges_update.log 2>&1
 ##
 ###Update Loomis points_no_ranges table
@@ -87,6 +120,15 @@
 ###Update points_not_served table every night
 00 23 * * * /opt/sap/cron_scripts/points_not_served.pl > /opt/sap/cron_scripts/cron_logs/points_not_served.log 2>&1
 ##
+###Move cmfaudit to cmfaudit_history for both CP and LM
+50 00 * * * /opt/sap/cron_scripts/cmfaudit_move_history_lm_cp.pl > /opt/sap/cron_scripts/cron_logs/cmfaudit_move_history_lm_cp.log 2>&1
+##
+###Run scan_compliance_update every day for Canpar and Loomis
+00 01 * * * /opt/sap/cron_scripts/scan_compliance_update.pl > /opt/sap/cron_scripts/cron_logs/scan_compliance_update.log 2>&1
+##
+###Run scan_compliance_stats every day for Canpar and Loomis
+00 05 * * * /opt/sap/cron_scripts/scan_compliance_stats.pl > /opt/sap/cron_scripts/cron_logs/scan_compliance_stats.log 2>&1
+##
 ###Refresh srvc_times_ground_nr
 00 03 6 * * /opt/sap/cron_scripts/srvc_times_ground_nr_refresh.pl > /opt/sap/cron_scripts/cron_logs/srvc_times_ground_nr_refresh.log 2>&1
 ##
@@ -94,14 +136,11 @@
 00,30 * * * * /opt/sap/cron_scripts/COSInventory_inserts_cpscan_lmscan.pl > /opt/sap/cron_scripts/cron_logs/COSInventory_inserts_cpscan_lmscan.log 2>&1
 ##
 ###Run performance monitoring report three times a day
-###00 23,01,04,07,10,13,16,19 * * 1-6 /opt/sap/cron_scripts/monitor_ase_performance.pl > /opt/sap/cron_scripts/cron_logs/monitor_ase_performance.log 2>&1
-###00 * * * 1-6 /opt/sap/cron_scripts/monitor_ase_performance.pl > /opt/sap/cron_scripts/cron_logs/monitor_ase_performance.log 2>&1
+###00 23,01,02,03,04,07,10,13,17,19,21 * * 1-6 /opt/sap/cron_scripts/monitor_ase_performance.pl > /opt/sap/cron_scripts/cron_logs/monitor_ase_performance.log 2>&1
+###*/2 02,03,04,05,06,07 * * 1-6 /opt/sap/cron_scripts/monitor_ase_performance.pl > /opt/sap/cron_scripts/cron_logs/monitor_ase_performance.log 2>&1
+*/5 07,08,09,10,11,12,13,14,15,16,17,18,19,20,21,22,23 * * 1-6 /opt/sap/cron_scripts/mon_current_processes.pl > /opt/sap/cron_scripts/cron_logs/mon_current_processes.log 2>&1
 #
 55 23 * * * /opt/sap/cron_scripts/AddCorrExpiredUpdate.pl > /opt/sap/cron_scripts/cron_logs/AddCorrExpiredUpdate.log 2>&1
-##
-###10 01 * * 0 /opt/sap/cron_scripts/StreetPerfect_data_xfr.pl > /opt/sap/cron_scripts/cron_logs/StreetPerfect_data_xfr.log 2>&1
-##
-##00 07 * * * /opt/sap/cron_scripts/flash_master_to_flash_data.pl > /opt/sap/cron_scripts/cron_logs/flash_master_to_flash_data.log 2>&1
 ##
 00 00 * * 0 /opt/sap/cron_scripts/cmf_security_list_refresh.pl > /opt/sap/cron_scripts/cron_logs/cmf_security_list_refresh.log 2>&1
 ##
@@ -109,31 +148,27 @@
 ##
 00 04 * * * /opt/sap/cron_scripts/add_new_customers_to_pr_tables.pl > /opt/sap/cron_scripts/cron_logs/add_new_customers_to_pr_tables.log 2>&1
 #
-### ============================================== CANPAR MPR PROCS ============================
+00 * * * * /opt/sap/cron_scripts/copy_h_barcode_scans_from_lmscan.pl > /opt/sap/cron_scripts/cron_logs/copy_h_barcode_scans_from_lmscan.log 2>&1
+#
+### ============================================== DAILY CANPAR MPR PROCS ==================================================
 00 12 * * * /opt/sap/cron_scripts/vp_alltotals.pl > /opt/sap/cron_scripts/cron_logs/vp_alltotals.log 2>&1
 00 01 16 * * /opt/sap/cron_scripts/vp_alltotals_terminal.pl > /opt/sap/cron_scripts/cron_logs/vp_alltotals_terminal.log 2>&1 
 10 03 * * * /opt/sap/cron_scripts/mpr_stop_time_load.pl > /opt/sap/cron_scripts/cron_logs/mpr_stop_time_load.log 2>&1
-30 10 28 * * /opt/sap/cron_scripts/mpr_data_load_master_record.pl > /opt/sap/cron_scripts/cron_logs/mpr_data_load_master_record.log 2>&1
 45 * * * * /opt/sap/cron_scripts/mpr_gl_extract.pl > /opt/sap/cron_scripts/cron_logs/mpr_gl_extract.log 2>&1
 30 * * * * /opt/sap/cron_scripts/mpr_gl_groups_data.pl > /opt/sap/cron_scripts/cron_logs/mpr_gl_groups_data.log 2>&1
-##25 11 * * 0 /opt/sap/cron_scripts/mpr_interline_costing_proc.pl > /opt/sap/cron_scripts/cron_logs/mpr_interline_costing_proc.log 2>&1
-##15 02 21 * * /opt/sap/cron_scripts/mpr_pickup_final_costing_proc.pl > /opt/sap/cron_scripts/cron_logs/mpr_pickup_final_costing_proc.log 2>&1
+###Upload MPR payroll hourly
+00 23 * * 1 /opt/sap/cron_scripts/mpr_payroll_hourly.sh > /opt/sap/cron_scripts/cron_logs/mpr_payroll_hourly.log 2>&1
+##
+##============================================ END OF DAILY CANPAR MPR PROCS================================================
 #
-###35 03 * * * /opt/sap/cron_scripts/mpr_init_all_flags.pl > /opt/sap/cron_scripts/cron_logs/mpr_init_all_flags.log 2>&1
-###================================================MPR PROCS===========================================
-#
-### ============================================== Loomis MPR_DATA_LM PROCS ==================================
-##00 03 * * * /opt/sap/cron_scripts/mpr_lm_bcxref_work_update.pl > /opt/sap/cron_scripts/cron_logs/mpr_lm_bcxref_work_update.log 2>&1
-##30 05 * * * /opt/sap/cron_scripts/mpr_lm_route_proc.pl > /opt/sap/cron_scripts/cron_logs/mpr_lm_route_proc.log 2>&1
+## ============================================== DAILY Loomis MPR_DATA_LM PROCS ===========================================
 05 * * * * /opt/sap/cron_scripts/mpr_lm_gl_extract.pl > /opt/sap/cron_scripts/cron_logs/mpr_lm_gl_extract.log 2>&1
 21 * * * * /opt/sap/cron_scripts/mpr_lm_gl_groups_data.pl > /opt/sap/cron_scripts/cron_logs/mpr_lm_gl_groups_data.log 2>&1
-30 11 28 * * /opt/sap/cron_scripts/mpr_data_lm_load_master_record.pl > /opt/sap/cron_scripts/cron_logs/mpr_data_lm_load_master_record.log 2>&1
+###=========================================== END OF DAILY LOOMIS MPR_DATA_LM PROCS========================================
 #
-###================================================MPR_DATA_LM PROCS===========================================
-##
-###Weekly scan_RTP_insert process 
-##00 04 * * 1 /opt/sap/cron_scripts/scan_RTP_insert.pl > /opt/sap/cron_scripts/cron_logs/scan_RTP_insert.log 2>&1
-##
+## ============================================== MONTHLY MPR_DATA PROCS - CANPAR AND LOOMIS =============================================
+##30 10 28 * * /opt/sap/cron_scripts/mpr_data_load_master_record.pl > /opt/sap/cron_scripts/cron_logs/mpr_data_load_master_record.log 2>&1
+==========================================================================================================================================
 ###Move PMS HUB data every 5 min
 * * * * * /opt/sap/cron_scripts/move_hub_scans.pl > /opt/sap/cron_scripts/cron_logs/move_hub_scans.log 2>&1
 ##
@@ -141,26 +176,21 @@
 00,05,10,15,20,25,30,35,40,45,50,55 * * * * /opt/sap/cron_scripts/import_ma_data.pl > /opt/sap/cron_scripts/cron_logs/import_ma_data.log 2>&1
 ##
 ##Process lmscan parcel table records
-#* * * * * /opt/sap/cron_scripts/process_parcel_records.pl > /opt/sap/cron_scripts/cron_logs/process_parcel_records.log 2>&1
 * * * * * /opt/sap/cron_scripts/process_parcel_records_missing.pl > /opt/sap/cron_scripts/cron_logs/process_parcel_records_missing.log 2>&1
 ##
 ###Generate Virtual ARR scans
 00,15,30,45 * * * * /opt/sap/cron_scripts/generate_virtual_scans_fromWC.pl > /opt/sap/cron_scripts/cron_logs/generate_virtual_scans_fromWC.log 2>&1
-##00 09 * * 1-5 /opt/sap/cron_scripts/generate_virtual_scans_WC_from_LO.pl > /opt/sap/cron_scripts/cron_logs/generate_virtual_scans_WC_from_LO.log 2>&1
 ##
 00 00 1 * * /opt/sap/cron_scripts/generate_sybase_user_list.pl > /opt/sap/cron_scripts/cron_logs/generate_sybase_user_list.log 2>&1
 05 00 1 * * /opt/sap/cron_scripts/generate_sybase_disabled_user_list.pl > /opt/sap/cron_scripts/cron_logs/generate_sybase_disabled_user_list.log 2>&1
 ##
 ###Weekly Audit Report Emailed directly to Frank Orourke
-##00 03 * * 1 /opt/sap/cron_scripts/weekly_audit_rpt.pl > /opt/sap/cron_scripts/cron_logs/weekly_audit_rpt.log 2>&1
-##15 02,05,08,13,16,20,23 * * * /opt/sap/cron_scripts/switch_audit_table.pl > /opt/sap/cron_scripts/cron_logs/switch_audit_table.log 2>&1
+00 03 * * 1 /opt/sap/cron_scripts/weekly_audit_rpt.pl > /opt/sap/cron_scripts/cron_logs/weekly_audit_rpt.log 2>&1
+15 02,05,08,13,16,20,23 * * * /opt/sap/cron_scripts/switch_audit_table.pl > /opt/sap/cron_scripts/cron_logs/switch_audit_table.log 2>&1
 ##
 ###svp_proc processing
-##00,39 02-23 * * * /opt/sap/cron_scripts/svp_proc_parcelwork_update.pl > /opt/sap/cron_scripts/cron_logs/svp_proc_parcelwork_update.log 2>&1
 00,35 02-23 * * * /opt/sap/cron_scripts/svp_proc_parcelwork_update_lm.pl > /opt/sap/cron_scripts/cron_logs/svp_proc_parcelwork_update_lm.log 2>&1
 05,44 02-23 * * * /opt/sap/cron_scripts/svp_proc_parcelwork_update_cp.pl > /opt/sap/cron_scripts/cron_logs/svp_proc_parcelwork_update_cp.log 2>&1
-##46 04 * * * /opt/sap/cron_scripts/svp_proc_eputwork_update.pl > /opt/sap/cron_scripts/cron_logs/svp_proc_eputwork_update.log 2>&1
-##30 04 * * 0 /opt/sap/cron_scripts/svp_parcel_del_eval_execution.pl > /opt/sap/cron_scripts/cron_logs/svp_parcel_del_eval_execution.log 2>&1
 00 10 * * * /opt/sap/cron_scripts/svp_url_delay_alert.pl > /opt/sap/cron_scripts/cron_logs/svp_url_delay_alert.log 2>&1
 ##
 ### preinvoice process
@@ -174,24 +204,19 @@
 ##
 30 00 * * * /opt/sap/cron_scripts/update_cmfmetricsty.pl > /opt/sap/cron_scripts/cron_logs/update_cmfmetricsty.log 2>&1
 ##
-###01 00 * * *  /opt/sap/cron_scripts/tttl_ev_event_delete.pl > /opt/sap/cron_scripts/cron_logs/tttl_ev_event_delete.log 2>&1
-##
-###10 00 * * *  /opt/sap/cron_scripts/tttl_pa_parcel_delete.pl > /opt/sap/cron_scripts/cron_logs/tttl_pa_parcel_delete.log 2>&1
-##
 ### ScannerTableUpdate
 30 00 * * * /opt/sap/cron_scripts/ScannerTableUpdate_lm.pl > /opt/sap/cron_scripts/cron_logs/ScannerTableUpdate_lm.log 2>&1
 30 01 * * * /opt/sap/cron_scripts/ScannerTableUpdate_cp.pl > /opt/sap/cron_scripts/cron_logs/ScannerTableUpdate_cp.log 2>&1
 ##
-05 11 * * 0 /opt/sap/cron_scripts/proc_cache_clear.pl > /opt/sap/cron_scripts/cron_logs/proc_cache_clear.log 2>&1
-##
 ### upd_rawbc_pickup_shipper
-00,15,30,45 * * * * /opt/sap/cron_scripts/upd_rawbc_pickup_shipper.pl > /opt/sap/cron_scripts/cron_logs/upd_rawbc_pickup_shipper.log 2>&1
+*/15 1-23 * * * /opt/sap/cron_scripts/upd_rawbc_pickup_shipper.pl > /opt/sap/cron_scripts/cron_logs/upd_rawbc_pickup_shipper.log 2>&1
+10 00 * * * /opt/sap/cron_scripts/upd_rawbc_pickup_shipper_daily.pl > /opt/sap/cron_scripts/cron_logs/upd_rawbc_pickup_shipper_daily.log 2>&1
 ##
 ### feed_COSInventory
 20 * * * * /opt/sap/cron_scripts/feed_COSInventory.pl > /opt/sap/cron_scripts/cron_logs/feed_COSInventory.log 2>&1
 ##
 #process_cuber_events
-00,10,20,30,40,50 * * * * /opt/sap/cron_scripts/process_cuber_events.pl > /opt/sap/cron_scripts/cron_logs/process_cuber_events.log 2>&1
+00,10,20,30,40,50 1-23 * * * /opt/sap/cron_scripts/process_cuber_events.pl > /opt/sap/cron_scripts/cron_logs/process_cuber_events.log 2>&1
 ##
 #search_for_np_scans_lm
 00 20 * * * /opt/sap/cron_scripts/search_for_np_scans_lm.pl > /opt/sap/cron_scripts/cron_logs/search_for_np_scans_lm.log 2>&1
@@ -200,15 +225,13 @@
 00,10,20,30,40,50 * * * * /opt/sap/cron_scripts/process_sort_servers_data.pl > /opt/sap/cron_scripts/cron_logs/process_sort_servers_data.log 2>&1
 ##
 #generate_overhead_scan_events
-15,45 * * * * /opt/sap/cron_scripts/generate_overhead_scan_events.pl > /opt/sap/cron_scripts/cron_logs/generate_overhead_scan_events.log 2>&1
+*/15 * * * * /opt/sap/cron_scripts/generate_overhead_scan_events.pl > /opt/sap/cron_scripts/cron_logs/generate_overhead_scan_events.log 2>&1
 ##
 00 07 * * * /opt/sap/cron_scripts/scan_sorts_data.pl > /opt/sap/cron_scripts/cron_logs/scan_sorts_data.log 2>&1
 ##
 00 05 * * 1 /opt/sap/cron_scripts/dqm_freight_dist_type3_data_load.pl > /opt/sap/cron_scripts/cron_logs/dqm_freight_dist_type3_data_load.log 2>&1
 ##
 00 06 * * * /opt/sap/cron_scripts/generate_virtual_ONRs.pl > /opt/sap/cron_scripts/cron_logs/generate_virtual_ONRs.log 2>&1
-##
-00 05,10,15,20 * * * /opt/sap/cron_scripts/dump_databases.pl > /opt/sap/cron_scripts/cron_logs/dump_databases.log 2>&1
 ##
 00 00 1,17 * * /opt/sap/cron_scripts/dump_databases_mpr.pl > /opt/sap/cron_scripts/cron_logs/dump_databases_mpr.log 2>&1
 ##
@@ -218,23 +241,39 @@
 ##
 00 10 * * * /opt/sap/cron_scripts/purge_overhead_package_scans.pl > /opt/sap/cron_scripts/cron_logs/purge_overhead_package_scans.log 2>&1
 ##
-30 03 * * 0 /opt/sap/cron_scripts/pd_stops_pcs_generation.pl > /opt/sap/cron_scripts/cron_logs/pd_stops_pcs_generation.log 2>&1
+30 03 * * * /opt/sap/cron_scripts/pd_stops_pcs_generation.pl > /opt/sap/cron_scripts/cron_logs/pd_stops_pcs_generation.log 2>&1
 ##
 45 * * * * /opt/sap/cron_scripts/lh_actual_dpts.pl > /opt/sap/cron_scripts/cron_logs/lh_actual_dpts.log 2>&1
 ##
 20 00 * * * /opt/sap/cron_scripts/update_shipper_pickup_timestamp.pl > /opt/sap/cron_scripts/cron_logs/update_shipper_pickup_timestamp.log 2>&1
 ##
+00 6,7,8,9,10,11 * * * /opt/sap/cron_scripts/linehaul_data_execute_dly_late_sort_scans.pl > /opt/sap/cron_scripts/cron_logs/linehaul_data_execute_dly_late_sort_scans.log 2>&1
+###Below are the svb maintenance jobs
+00 21 * * 0 /opt/sap/cron_scripts/lm_generate_svb_summary_weekly.pl > /opt/sap/cron_scripts/cron_logs/lm_generate_svb_summary_weekly.log 2>&1
+00 05 * * * /opt/sap/cron_scripts/lm_maintain_svb_summary.pl > /opt/sap/cron_scripts/cron_logs/lm_maintain_svb_summary.log 2>&1
+00 21 * * 0 /opt/sap/cron_scripts/cp_generate_svb_summary_weekly.pl > /opt/sap/cron_scripts/cron_logs/cp_generate_svb_summary_weekly.log 2>&1
+00 05 * * * /opt/sap/cron_scripts/cp_maintain_svb_summary.pl > /opt/sap/cron_scripts/cron_logs/cp_maintain_svb_summary.log 2>&1
+###Below job is a temporary solution to handle H barcodes for tttl_dw_dimensional_weight until we get a hospital table setup for this. It checks for duplicates, so it can be re-run if it fails for any reason
+00 02 * * * /opt/sap/cron_scripts/translate_dim_weight_from_alt_barcode.pl > /opt/sap/cron_scripts/cron_logs/translate_dim_weight_from_alt_barcode.log 2>&1
+###Below job will be the proc that processes the rows in hub_db..event. It can be re-run or run on demand. We might need to adjust the frequency later.
+* * * * * /opt/sap/cron_scripts/process_hub_db_events.pl > /opt/sap/cron_scripts/cron_logs/process_hub_db_events.log 2>&1
+##
+##Populate the mobitrax job table with the manifest data
+* * * * * /opt/sap/cron_scripts/mobitrax_jobs_manifest_populate.pl > /opt/sap/cron_scripts/cron_logs/mobitrax_jobs_manifest_populate.log 2>&1
+##
+###Below job will reset mobitrax jobs.
+15 00 * * * /opt/sap/cron_scripts/mobitrax_jobs_reset.pl > /opt/sap/cron_scripts/cron_logs/mobitrax_jobs_reset.log 2>&1
+##
+###Below job will handle driver breaks
+*/10 * * * * /opt/sap/cron_scripts/document_process_breaks.pl > /opt/sap/cron_scripts/cron_logs/document_process_breaks.log 2>&1
+##
+###Below job will populate the auxiliar Loomis manifest table
+00 05 * * * /opt/sap/cron_scripts/mds_manifest_loomis.pl > /opt/sap/cron_scripts/cron_logs/mds_manifest_loomis.log 2>&1
+##
+*/5 * * * * /opt/sap/cron_scripts/document_process_refueling.pl > /opt/sap/cron_scripts/cron_logs/document_process_refueling.log 2>&1
+##
 ######################################Following is the misc jobs area that runs infrequently#####################################
-###Run ps -ef to see what processes are running that may be causing slowness
-####* * * * * /opt/sap/cron_scripts/monitor_spid.pl >> /opt/sap/cron_scripts/cron_logs/monitor_spid.log 2>&1
-###* * * * * /opt/sap/cron_scripts/track_single_process.pl 4082 gl_load_complete akhan > /opt/sap/cron_scripts/cron_logs/track_single_process.log 2>&1
-###* * * * * /opt/sap/cron_scripts/track_single_process.pl 1003 linehaul_load_complete jrobinson > /opt/sap/cron_scripts/cron_logs/track_single_process.log 2>&1
-####00 21 * * 1 /opt/sap/cron_scripts/kill_certain_user.pl CPDB2 master > /opt/sap/cron_scripts/cron_logs/kill_certain_user.log 2>&1
-###05 23 * * 6 /opt/sap/cron_scripts/run_misc_sql_3.pl > /opt/sap/cron_scripts/cron_logs/run_misc_sql_3.log 2>&1
-###00,15,30,45 * * * * /opt/sap/cron_scripts/misc_sql.pl >> /opt/sap/cron_scripts/cron_logs/misc_sql.log 2>&1
-####30 19 * * 6 /opt/sap/cron_scripts/run_import_costing_data.pl > /opt/sap/cron_scripts/cron_logs/run_import_costing_data.log 2>&1
-####30 23 * * 2 /opt/sap/cron_scripts/increase_db_size.pl CPDB2 cpscan vg32_data_dev8 3000 event_seg > /opt/sap/cron_scripts/cron_logs/CPDB2_cpsan_seg_inc.log 2>&1
-####00,05,10,15,20,25,30,35,40,45,50,55 * * * * /opt/sap/cron_scripts/track_process_complete.pl > /opt/sap/cron_scripts/cron_logs/track_process_complete.log 2>&1
-####40 02 * * * /opt/sap/cron_scripts/employee_emp_term_backup.pl > /opt/sap/cron_scripts/cron_logs/employee_emp_term_backup.log 2>&1
-###10 16 * * 3 /opt/sap/cron_scripts/svp_parcel_url_execution.pl > /opt/sap/cron_scripts/cron_logs/svp_parcel_url_execution.log 2>&1
-
+00 17 * * * /opt/sap/cron_scripts/record_table_growth.pl > /opt/sap/cron_scripts/cron_logs/record_table_growth.log 2>&1
+##* * * * * /opt/sap/cron_scripts/removeCommvaultLogFiles.sh > /opt/sap/cron_scripts/cron_logs/removeCommvaultLogFiles.log 2>&1
+00 13 24 12 * /opt/sap/cron_scripts/backup_cod_tables_december.pl > /opt/sap/cron_scripts/cron_logs/backup_cod_tables_december.log 2>&1
+00 01 02 01 * /opt/sap/cron_scripts/backup_cod_tables_january.pl > /opt/sap/cron_scripts/cron_logs/backup_cod_tables_january.log 2>&1

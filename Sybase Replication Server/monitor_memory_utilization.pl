@@ -14,7 +14,7 @@ use warnings;
 use Getopt::Long qw(GetOptions);
 
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
-my $tmem=500;
+my $tmem=2000;
 my $skipcheckprod=0;
 
 GetOptions(

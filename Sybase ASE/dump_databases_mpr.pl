@@ -104,9 +104,9 @@ print "$scpError\n";
 ###############################
 
 #Loading databases into standby server
-$load_msgs = `ssh $stbyserver /opt/sap/cron_scripts/load_databases_mpr.pl $stbyserver`;
+$load_msgs = `ssh $stbyserver /opt/sap/cron_scripts/load_databases_mpr.pl -s $stbyserver`;
 #Loading databases into DR server
-$load_msgs_dr = `ssh $drserver /opt/sap/cron_scripts/load_databases_mpr.pl $drserver`;
+$load_msgs_dr = `ssh $drserver /opt/sap/cron_scripts/load_databases_mpr.pl -s $drserver`;
 
 print "$load_msgs \n";
 print "$load_msgs_dr \n";

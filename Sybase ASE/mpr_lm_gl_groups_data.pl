@@ -1,17 +1,11 @@
-#!/usr/bin/perl 
+#!/usr/bin/perl
 
-###################################################################################
-#Script:   This script uploads gl_national_groups data from solomon onto sybase   #
-#          for mpr purposes                                                       #
-#                                                                                 #
-#Author:   Amer Khan                                                              #
-#Revision:                                                                        #
-#Date           Name            Description                                       #
-#---------------------------------------------------------------------------------#
-#Dec 19 2013	Amer Khan       Originally created                                #
-#                                                                                 #
-#                                                                                 #
-###################################################################################
+#Script:   This script uploads gl_national_groups data from solomon onto sybase
+#          for mpr purposes
+#Author:   Amer Khan
+#Date           Name            Description
+#Dec 19 2013	   Amer Khan       Originally created
+#Apr 30 2020    Rafael Bahia    Changed db conn to use cronmpr user to allow separate tempdb usage
 
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
 while (<PROD>){
@@ -46,7 +40,7 @@ print "GL Extract StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 
 #Uploading data...
-if (-e "/opt/sap/bcp_data/mpr_data_lm/gl_extract/gl_groupings_lm.csv"){ 
+if (-e "/opt/sap/bcp_data/mpr_data_lm/gl_extract/gl_groupings_lm.csv"){
 $bcp_msg = `. /opt/sap/SYBASE.sh
 bcp mpr_data_lm..gl_national_groups in /opt/sap/bcp_data/mpr_data_lm/gl_extract/gl_groupings_lm.csv -Usa -S$prodserver -P\`/opt/sap/cron_scripts/getpass.pl sa\` -c -t","  -r"\r\n" -b1`;
 }else{
@@ -56,7 +50,7 @@ bcp mpr_data_lm..gl_national_groups in /opt/sap/bcp_data/mpr_data_lm/gl_extract/
 #Any errors
 print "BCP Messages: $bcp_msg";
 
-if($bcp_msg !~ /rows copied/ ){      
+if($bcp_msg !~ /rows copied/ ){
 print "Errors may have occurred during bcp...\n\n";
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
@@ -72,8 +66,8 @@ $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
 use mpr_data_lm
 go
-set clientapplname \'GL Groups Data Upload\'     
-go    
+set clientapplname \'GL Groups Data Upload\'
+go
 execute mpr_gl_groups_upload_data
 go
 exit

@@ -1,5 +1,16 @@
 #!/bin/bash
 
+#if the operations folder is not mounted, use the command below to do so
+#sudo mount "//10.3.1.186/Department/Information Technology/DevDump/operations" /opt/sybase/bcp_data/operations -o username=em_process1,password=Canpar_2001,domain=canparnt
+
+echo "Test Mount Point...\n";
+mount_pt="`cat /etc/mtab | grep "operations "`"
+if [ -z "$mount_pt" ]; then
+   mount_msgs = `sudo mount "//10.3.1.186/Department/Information Technology/DevDump/operations" /opt/sybase/bcp_data/operations -o username=em_process1,password=Canpar_2001,domain=canparnt 2>&1`
+   else
+   echo "Dir is already mounted \n";
+fi
+
 sheet="`ls /opt/sybase/bcp_data/operations -Art | tail -n 1`"
 
 if [ -z "$sheet" ]; then

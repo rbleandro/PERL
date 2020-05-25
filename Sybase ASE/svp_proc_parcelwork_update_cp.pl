@@ -186,7 +186,7 @@ set clientapplname \'svp_proc_parcel_update--Step 1\'
 go
 declare \@run_date date
 select \@run_date = dateadd(dd,2,max(inserted_on_cons)) from svp_parcel
-if convert(date,\@run_date) <= convert(date,getdate())
+if convert(date,\@run_date) < convert(date,getdate())
 begin
 select \"Running for following date\:\", \@run_date
 declare \@now datetime
@@ -300,6 +300,14 @@ go
 declare \@now datetime
 set \@now=getdate()
 insert into svp_cp..svp_status_run values ( 4,\'svp_parcel_url_execution_cp\',\@now,\'01/01/1900',\'start\',getDate(),getDate())
+go
+update svp_cp..svp_parcel set inserted_on_cons =dateadd(millisecond, -datepart(millisecond, inserted_on_cons), inserted_on_cons)
+where first_scan_date > convert(varchar(12),dateadd(dd,-100,getDate()))
+and made_service=''
+and first_scan_date <>'1900/01/01 00:00:00.0'
+and rtrim(ltrim(origin_postal)) <> '' and rtrim(ltrim(destin_postal_scan)) <> ''
+and len(rtrim(origin_postal)) > 5 and len(rtrim(destin_postal_scan))> 5
+and (expected_del_date_flag='Y' and (expected_del_date is null or  expected_del_date = '1900-01-01 00:00:00.0'))
 go
 exit
 EOF

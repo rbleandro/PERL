@@ -57,6 +57,12 @@ my $error = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -b<<EOF 2>&1
 set nocount on
 go
+if object_id('dba.dbo.sessionWhiteList') is not null
+begin
+delete from dba.dbo.sessionWhiteList where inserted_on is null
+delete from dba.dbo.sessionWhiteList where inserted_on < dateadd(hh,-24,getdate())
+end
+go
 select spid,'#',DB_NAME(dbid) as 'database','#',isnull(execution_time/1000/60,-1) as execution_time,'#',status,'#',physical_io,'#',isnull(suser_name(suid),'Unknown') as username,'#',
 isnull(CASE clientapplname WHEN '' THEN program_name WHEN NULL THEN program_name ELSE clientapplname END,'Unknown') 'program','#',
 CASE clienthostname WHEN '' THEN isnull(hostname,ipaddr) WHEN NULL THEN isnull(hostname,ipaddr) ELSE clienthostname END 'host','#'
@@ -90,21 +96,36 @@ die "Email sent\n";
 }
 
 $error=~s/\t//g;
-#$error=~s/\s//g;
-
-#print "$error\n";
 
 if ($error =~ /#/){
 
 my $htmlmail="<html>
 <head>
 <title>HTML E-mail</title>
+<style>
+table {
+  border-collapse: collapse;
+}
+table, th, td {
+  border: 1px solid black;
+}
+td {
+  padding: 5px;
+  text-align: left;
+}
+th {
+  background-color: #99bfac;
+  color: white;
+  padding: 5px;
+  text-align: center;
+}
+</style>
 </head>
 <body>
 <p>Check below the list of sessions doing large IO. The following plan is for the heaviest session only. For more details about the other sessions, run dbcc sqltext and sp_showplan. Duration is shown in minutes.</p>
 
 <table border=\"1\">
-<tr><td>spid</td><td>database</td><td>duration</td><td>status</td><td>physical_io</td><td>username</td><td>program</td><td>host</td><td>getPlan</td><td>getQuery</td></tr>\n";
+<th>spid</th><th>database</th><th>duration</th><th>status</th><th>physical_io</th><th>username</th><th>program</th><th>host</th><th>getPlan</th><th>getQuery</th>\n";
 my @results="";
 my $htmltable="";
 my $td="";
@@ -172,14 +193,22 @@ else
 }
 my $plandetails="";
 my $linecontrol=1;
+my $fromtable=0;
+my $temptable=0;
+my $rttflag=0;
 
 @results = split(/\n/,$error2);
 for (my $i=0; $i <= $#results; $i++){
 	if ($results[$i] =~ /\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* END OF QUERY \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*/){$plandetails.="<p>" . $results[$i] . "</p>"; $linecontrol=0;}
 	if ($results[$i] =~ /QUERY PLAN/){$linecontrol=1;}
+	
 	if ($linecontrol==1){
-		if ($results[$i] =~ /MERGE JOIN/ || $results[$i] =~ /Positioning at start/ || $results[$i] =~ /Table Scan/ || $results[$i] =~ /This step involves sorting/ || $results[$i] =~ /Positioning at index start/){
+		if ($results[$i] =~ /FROM TABLE/){$fromtable=1;$rttflag=0;}
+		if ($results[$i] =~ /#/ && $fromtable==1){$temptable=1;$fromtable=0;}
+		if ($results[$i] =~ /Using I\/O/){$temptable=0;}
+		if (($results[$i] =~ /MERGE JOIN/ || $results[$i] =~ /Positioning at start/ || $results[$i] =~ /Table Scan/ || $results[$i] =~ /This step involves sorting/ || $results[$i] =~ /Positioning at index start/) && $temptable==0){
 			$plandetails.="<p style=\"background-color: #FF0000\"><font color='white'>" . $results[$i] . "</font></p>";
+			
 		}else{
 			$plandetails.="<p>" . $results[$i] . "</p>";
 		}
