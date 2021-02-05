@@ -41,7 +41,7 @@ $startMin=sprintf('%02d',((localtime())[1]));
 print "Preinvoicing StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\`  -b -n<<EOF 2>&1
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\`  -b -n<<EOF 2>&1
 use rev_hist_lm
 go
 set nocount on
@@ -117,7 +117,7 @@ EOF
 $currTime = localtime();
 print "\nAll flags are set running proc now $currTime\n\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\`  -b -n<<EOF 2>&1
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\`  -b -n<<EOF 2>&1
 use rev_hist_lm
 go
 declare \@invoice_date date 
@@ -247,7 +247,7 @@ print "Step 1 FinTime: $currTime\n";
 $currTime = localtime();
 print "\nAll flags are set running proc now $currTime\n\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\`  -b -n<<EOF 2>&1
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\`  -b -n<<EOF 2>&1
 use rev_hist_lm
 go
 declare \@invoice_date date
@@ -432,7 +432,7 @@ print "Step 2 FinTime: $currTime\n";
 $currTime = localtime();
 print "\nAll flags are set running proc now $currTime\n\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\`  -b -n<<EOF 2>&1
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\`  -b -n<<EOF 2>&1
 use rev_hist_lm
 go
 declare \@invoice_date date
@@ -534,7 +534,7 @@ EOF
 $currTime = localtime();
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\`  -b -n<<EOF 2>&1
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\`  -b -n<<EOF 2>&1
 use rev_hist_lm
 go
 declare \@invoice_date date

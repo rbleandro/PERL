@@ -46,22 +46,22 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
 use cpscan
-go    
+go
 update shipper
 set updated_on_cons = getdate()
---select * 
-from shipper s where pickup_days_of_week <> '' 
+--select *
+from shipper s where pickup_days_of_week <> ''
 and s.updated_on_cons > dateadd(dd,-10,getdate())
 and s.customer_num not in (select p.customer from cmf_data..disp_cust p where s.customer_num = p.customer)
-go 
+go
 use lmscan
 go
 update shipper
 set updated_on_cons = getdate()
---select * 
-from shipper s where pickup_days_of_week <> '' 
+--select *
+from shipper s where pickup_days_of_week <> ''
 and s.updated_on_cons > dateadd(dd,-10,getdate())
 and s.customer_num not in (select p.customer from cmf_data_lm..disp_cust p where s.customer_num = p.customer)
 go

@@ -30,7 +30,7 @@ if ($prodserver eq "CPDB2" ) {
 
 #Execute sybase Monitoring
 $error = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$standbyserver -l180 -n -b <<EOF 2>&1
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$standbyserver -l180 -n -b <<EOF 2>&1
 exit
 EOF
 `;

@@ -77,7 +77,7 @@ th {
 $htmlmail .= "<p>Following is a summary of CPU utilization. Data from the last 7 days. More details can be found in table dba.dbo.server_health.</p>\n";
 
 my $affdb = `. /opt/sap/SYBASE.sh
-isql -Usa -w900 -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -n -b <<EOF 2>&1
+isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
 select avg(cpu_busy) as AvgCPU,'#',max(cpu_busy) as MaxCPU,'#',min(cpu_busy) as MinCPU
@@ -125,7 +125,7 @@ $htmlmail .= $htmltable . "</table>\n";
 $htmlmail .= "<p>Following is the cache hit ratio for all caches configured. If number are below 90%, it is possible that you are doing too much physical IO.</p>\n";
 
 my $logshold = `. /opt/sap/SYBASE.sh
-isql -Usa -w900 -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -n -b <<EOF 2>&1
+isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
 select * into #moncache_prev 
@@ -179,18 +179,20 @@ for (my $i=0; $i <= $#results; $i++){
 
 $htmlmail .= $htmltable . "</table>\n";
 
-$htmlmail .= "<p>Below is the Wait Statistics distribution. Use it to check what are the bottlenecks in the server. All the numbers are cumulative since the last server restart.</p>\n";
+$htmlmail .= "<p>Below distribution for the most relevant wait statistics. Use it to check what are the bottlenecks in the server. All the numbers are cumulative since the last server restart.</p>\n";
 
 my $waits = `. /opt/sap/SYBASE.sh
-isql -Usa -w900 -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -n -b <<EOF 2>&1
+isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
 select case ServerUserID when 0 then "Y" else "N" end as "Server",'#',
 Description,'#', convert(bigint,sum(convert(bigint,w.Waits))) as "Count",'#'
 ,convert(bigint,sum(convert(bigint,w.WaitTime))/1000) as "Seconds"
-from    monProcessWaits w,monWaitEventInfo ei
+from    master..monProcessWaits w,master..monWaitEventInfo ei
 where   w.WaitEventID   = ei.WaitEventID
+and ServerUserID != 0
 group   by case ServerUserID when 0 then "Y" else "N" end,Description
+having convert(bigint,sum(convert(bigint,w.WaitTime))/1000) > 250000
 order by 1,convert(bigint,sum(convert(bigint,w.WaitTime))/1000) desc
 go
 EOF
@@ -231,29 +233,35 @@ for (my $i=0; $i <= $#results; $i++){
 
 $htmlmail .= $htmltable . "</table>\n";
 
-$htmlmail .= "<p>Below is the list of performance tuning opportunities. These are queries consuming more than $cput milliseconds of CPU time. More details can be found in table dba.dbo.heavy_queries.</p>\n";
-$htmlmail.="<table>
-<th>SQLText</th><th>Cpu Time</th><th>Snapshot Time</th><th>spid</th>\n";
-
-my $error = `. /opt/sap/SYBASE.sh
-isql -Usa -w20000 -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -n -b <<EOF 2>&1
-set nocount on
-go
-select case when len(SQLText)<=50 then SQLText else 'Check the table by Snaptime+spid' end as SQLText,'###',max(CpuTime) as CPUTime,'###',max(SnapTime) as SnapTime,'###',max(SPID) as spid
+$htmlmail .= "<p>To check performance tuning opportunities, check the table dba.dbo.heavy_queries by running the query below:<br>
+select SQLText,max(CpuTime) as CPUTime,max(SnapTime) as SnapTime,max(SPID) as spid
 from dba.dbo.heavy_queries
 where 1=1
-group by SQLText
+group by SQLText<br>
+go.<br></p>\n";
+
+$htmlmail .= "<p>Below is the list of unbound temporary databases. Bind these ASAP (you might have to restart the server to do so) or drop them to liberate resources.</p>\n";
+$htmlmail.="<table><th>Tempdb Name</th><th>Status</th>\n";
+
+my $utempdb = `. /opt/sap/SYBASE.sh
+isql -Usybmaint -w20000 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
+use dba
+go
+set nocount on
+set proc_return_status OFF
+go
+exec return_unbound_tempdb
 go
 EOF
 `;
 
-if($error =~ /Msg/)
+if($utempdb =~ /Msg/)
 {
-print $error . "\n";
+print $utempdb . "\n";
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
 Subject: ERROR - server_health_report.pl script (heavy queries phase).
-$error
+$utempdb
 EOF
 `;
 $finTime = localtime();
@@ -264,10 +272,10 @@ die "Email sent\n";
 @results="";
 @line="";
 $htmltable="";
-@results = split(/\n/,$error);
+@results = split(/\n/,$utempdb);
 
 for (my $i=0; $i <= $#results; $i++){
-	@line = split(/###/,$results[$i]);
+	@line = split(/#/,$results[$i]);
 	$htmltable.="<tr>\n";
 	for (my $l=0; $l <= $#line; $l++){
 		$td.="<td>" . $line[$l] . "</td>\n";
@@ -278,9 +286,9 @@ for (my $i=0; $i <= $#results; $i++){
 }
 
 $htmlmail .= $htmltable . "</table>\n";
+
 $htmlmail .= "<p>Script name: $0. CPU threshold: $cput milliseconds. Cache collection interval: $tcache minute.</p>";
 $htmlmail .= "</body></html>\n\n";
-
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com

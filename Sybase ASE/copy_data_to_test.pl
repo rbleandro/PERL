@@ -75,7 +75,7 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 `find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
 
-my $bcpError=`/opt/sap/OCS-16_0/bin/bcp $database..$table out /opt/sap/db_backups/$database\_$table.dat -n -S CPDB1 -U sa -P\`/opt/sap/cron_scripts/getpass.pl sa\``;
+my $bcpError=`/opt/sap/OCS-16_0/bin/bcp $database..$table out /opt/sap/db_backups/$database\_$table.dat -n -S CPDB1 -U cronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\``;
 
 if ($bcpError =~ /Error/ || $bcpError =~ /Msg/){
 print $bcpError."\n";

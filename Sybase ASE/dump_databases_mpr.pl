@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 ##########################################################################################################################################################
-#Script:   This script checks SVP URL delays
+#Script:   This script takes care of keeping mpr_data and mpr_data_lm databases up to date in standby and DR servers
 #
 #Author:	Amer Khan
 #Revision:
@@ -75,7 +75,7 @@ $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Errors - dump_databases at $finTime
+Subject: Errors - dump_databases_mpr at $finTime
 
 $sqlError
 EOF
@@ -92,11 +92,11 @@ print "$scpError\n";
 
 
 #Copying files to DR server
-$scpError=`scp -p $lbkpdir/db_backups/mpr_data.dmp sybase\@$drserver:$lbkpdir/db_backups`;
-print "$scpError\n";
+##$scpError=`scp -p $lbkpdir/db_backups/mpr_data.dmp sybase\@$drserver:$lbkpdir/db_backups`;
+##print "$scpError\n";
 
-$scpError=`scp -p $lbkpdir/db_backups/mpr_data_lm.dmp sybase\@$drserver:$lbkpdir/db_backups`;
-print "$scpError\n";
+##$scpError=`scp -p $lbkpdir/db_backups/mpr_data_lm.dmp sybase\@$drserver:$lbkpdir/db_backups`;
+##print "$scpError\n";
 
 
 ###############################
@@ -106,10 +106,10 @@ print "$scpError\n";
 #Loading databases into standby server
 $load_msgs = `ssh $stbyserver /opt/sap/cron_scripts/load_databases_mpr.pl -s $stbyserver`;
 #Loading databases into DR server
-$load_msgs_dr = `ssh $drserver /opt/sap/cron_scripts/load_databases_mpr.pl -s $drserver`;
+##$load_msgs_dr = `ssh $drserver /opt/sap/cron_scripts/load_databases_mpr.pl -s $drserver`;
 
 print "$load_msgs \n";
-print "$load_msgs_dr \n";
+##print "$load_msgs_dr \n";
 
 $finTime = localtime();
 print "Time Finished: $finTime\n";

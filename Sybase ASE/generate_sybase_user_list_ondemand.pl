@@ -49,7 +49,7 @@ my $startMin=sprintf('%02d',((localtime())[1]));
 print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 my $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -SCPDB1 -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -SCPDB1 -b -n<<EOF 2>&1
 use master
 go
 select name, CASE when locksuid is null then 'Yes' else 'No' end as Enabled

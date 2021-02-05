@@ -40,7 +40,7 @@ print "\n###Running update stats on Database:$database in Server:$server on Host
 
 print "***Initiating update stats At:".localtime()."***\n";
 $sqlError = `. /opt/sybase/SYBASE.sh
-isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -w300 <<EOF 2>&1
+isql -Usybmaint -P\`/opt/sybase/cron_scripts/getpass.pl sybmaint\` -S$server -w300 <<EOF 2>&1
 use $database
 go
 set nocount on

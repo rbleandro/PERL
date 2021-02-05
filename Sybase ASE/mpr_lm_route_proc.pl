@@ -73,7 +73,7 @@ while (1==1){
 $currTime = localtime();
 print "\nAll flags are set running proc now $currTime\n\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use mpr_data_lm
 go
 execute mpr_route_proc

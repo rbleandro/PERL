@@ -30,7 +30,7 @@ $database = $ARGV[1];
 
 #Count the number of rows in sysaudits_01 before paging
 $sqlError = `. /opt/sybase/SYBASE.sh
-isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -b -n<<EOF 2>&1
+isql -Usybmaint -P\`/opt/sybase/cron_scripts/getpass.pl sybmaint\` -S$server -b -n<<EOF 2>&1
 set nocount on
 go
 use $database
@@ -46,7 +46,7 @@ $sqlError =~ s/\s//g;
 #If number of rows is > 1, then we do have audit event to report, get the rest of info now
 if ($sqlError > 1){
 $sqlError1 = `. /opt/sybase/SYBASE.sh
-isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -n -w200<<EOF 2>&1
+isql -Usybmaint -P\`/opt/sybase/cron_scripts/getpass.pl sybmaint\` -S$server -n -w200<<EOF 2>&1
 set nocount on
 go
 use $database
@@ -73,7 +73,7 @@ EOF
 # Now the message has been sent, delete the rows from the sysaudits_01 to avoid page again the next hour
 
 $sqlError1 = `. /opt/sybase/SYBASE.sh
-isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -n -w200<<EOF 2>&1
+isql -Usybmaint -P\`/opt/sybase/cron_scripts/getpass.pl sybmaint\` -S$server -n -w200<<EOF 2>&1
 set nocount on
 go
 use $database

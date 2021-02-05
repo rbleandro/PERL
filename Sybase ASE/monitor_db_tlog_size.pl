@@ -17,7 +17,7 @@ my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
 my $finTime = localtime();
 my @prodline="";
-my $tsize=20;
+my $tsize=25;
 
 GetOptions(
     'skipcheckprod|s=s' => \$skipcheckprod,
@@ -43,6 +43,11 @@ if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
+
+if ($tsize == -9) {
+	$tsize = 0.4;
+}
+
 
 my $error = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -w1900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
@@ -130,7 +135,7 @@ th {
 <p>Check below the list of database whose log sizes are beyond the threshold.</p>
 
 <table >
-<th>database</th><th>isMixed</th><th>TotalMB</th><th>UsedMB</th><th>FreeMB</th><th>logUsed_pct</th>\n";
+<tr><th>database</th><th>isMixed</th><th>TotalMB</th><th>UsedMB</th><th>FreeMB</th><th>logUsed_pct</th></tr>\n";
 my @results="";
 my @line="";
 my $htmltable="";
@@ -159,21 +164,28 @@ You should separate the log segment from the other segments to allow database re
 Consult the documentation and use the procedure sp_logdevice to address this situation.</font></b></p>\n";
 }
 
-$htmlmail .= "<p>Following are the processes for the databases whose log are filled beyond the threshold.</p>\n";
+$htmlmail .= "<p>Following are the processes for the databases whose log are filled beyond the threshold. Duration is shown in minutes. Check the list below for a reference for the transaction state info:
+<br>1-Begun/2-Done Command/3-Done/4-Prepared/5-In Command/6-In Abort Cmd/7-Committed/8-In Post Commit/9-In Abort Tran
+10-In Abort Savept/65537-Begun-Detached/65538-Done Cmd-Detached/65539-Done-Detached/65540-Prepared-Detached/65548-Heur Committed/65549-Heur Rolledback
+</p>\n";
 
 my $affdb = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
-select spid,'#',DB_NAME(dbid) as 'database','#',isnull(execution_time/1000/60,-1) as execution_time,'#',status,'#',physical_io,'#',isnull(suser_name(suid),'Unknown') as username,'#',
-isnull(CASE clientapplname WHEN '' THEN program_name WHEN NULL THEN program_name ELSE clientapplname END,'Unknown') 'program','#',
-CASE clienthostname WHEN '' THEN isnull(hostname,ipaddr) WHEN NULL THEN isnull(hostname,ipaddr) ELSE clienthostname END 'host','#'
-,'exec sp_showplan('+cast(spid as varchar(100))+')' as getPlan,'#'
-,'dbcc sqltext('+cast(spid as varchar(100))+')' as getQuery
-from master..sysprocesses
-where suid > 0
-and status <> 'recv sleep'
-and DB_NAME(dbid) in
+select s.spid,'#',db_name(s.masterdbid),'#'
+,isnull(execution_time/1000/60,-1) as execution_time,'#'
+,p.status,'#'
+,physical_io,'#'
+,suser_name(p.suid) as "user",'#'
+,isnull(CASE clientapplname WHEN '' THEN program_name WHEN NULL THEN program_name ELSE clientapplname END,'Unknown') 'program','#'
+,CASE clienthostname WHEN '' THEN isnull(hostname,ipaddr) WHEN NULL THEN isnull(hostname,ipaddr) ELSE clienthostname END 'host','#'
+,s.state as TranState,'#'
+,'exec sp_showplan('+cast(p.spid as varchar(100))+')' as getPlan,'#'
+,'dbcc sqltext('+cast(p.spid as varchar(100))+')' as getQuery
+from master..systransactions s 
+left join master..sysprocesses p on p.spid=s.spid 
+where 1=1  and db_name(p.dbid) in 
 (
 	select db_name(d.dbid)
 	from master..sysdatabases d, master..sysusages u
@@ -218,7 +230,7 @@ die "Email sent\n";
 }
 
 $htmlmail .= "<table >
-<th>spid</th><th>database</th><th>duration</th><th>status</th><th>physical_io</th><th>username</th><th>program</th><th>host</th><th>getPlan</th><th>getQuery</th>\n";
+<th>spid</th><th>database</th><th>duration</th><th>status</th><th>physical_io</th><th>username</th><th>program</th><th>host</th><th>Tran State</th><th>getPlan</th><th>getQuery</th>\n";
 
 @results="";
 @line="";
@@ -286,7 +298,7 @@ for (my $i=0; $i <= $#results; $i++){
 	$td="";
 }
 
-$htmlmail .= $htmltable . "</table>\n";
+$htmlmail .= $htmltable . "</table><p>Script name: $0. Current threshold: $tsize%.</p>\n";
 
 $htmlmail .= "</body></html>\n\n";
 
@@ -298,8 +310,6 @@ Content-Type: text/html
 MIME-Version: 1.0
 
 $htmlmail
-
-Script name: $0. Current threshold: $tsize%.
 
 EOF
 `;

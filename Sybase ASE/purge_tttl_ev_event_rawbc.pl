@@ -29,12 +29,10 @@ $prodserver = hostname();
 
 print "***Initiating purge At:".localtime()."***\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF
 use lmscan
 go
-delete tttl_ev_event_rawbc
-from tttl_ev_event_rawbc (index idx1)
-where inserted_on < dateadd(mm,-6,getdate())
+exec purge_eventrawbc
 go
 exit
 EOF

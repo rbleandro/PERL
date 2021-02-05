@@ -53,22 +53,22 @@ my $startMin=sprintf('%02d',((localtime())[1]));
 print "lm_stage_purge_data StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 my $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use lm_stage
 go
 delete employee_login where scanner_drained_at < dateadd(dd,-40,getdate())
 go
-delete tttl_dr_delivery_record where conv_time_date < dateadd(dd,-40,getdate())
+delete tttl_dr_delivery_record where conv_time_date < convert(datetime,convert(date,getdate()))
 go
-delete tttl_ex_exception_comment where updated_on_cons < dateadd(dd,-40,getdate())
+delete tttl_ex_exception_comment where updated_on_cons < convert(datetime,convert(date,getdate()))
 go
-delete tttl_io_interline_outbound where updated_on_cons < dateadd(dd,-40,getdate())
+delete tttl_io_interline_outbound where updated_on_cons < convert(datetime,convert(date,getdate()))
 go
-delete tttl_pr_pickup_record where updated_on_cons < dateadd(dd,-40,getdate())
+delete tttl_pr_pickup_record where updated_on_cons < convert(datetime,convert(date,getdate()))
 go
-delete tttl_ps_pickup_shipper where updated_on_cons < dateadd(dd,-40,getdate())
+delete tttl_ps_pickup_shipper where updated_on_cons < convert(datetime,convert(date,getdate()))
 go
-delete tttl_pt_pickup_totals where updated_on_cons < dateadd(dd,-40,getdate())
+delete tttl_pt_pickup_totals where updated_on_cons < convert(datetime,convert(date,getdate()))
 go
 declare \@status int, \@retry int, \@maxretry int
 set \@retry = 0

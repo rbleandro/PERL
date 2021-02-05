@@ -1,10 +1,9 @@
 #!/usr/bin/perl
 
-#Script:   This script monitors if there are any distributors down
-#
-#Author:   Amer Khan
-#Date           Name            Description
-#Jun 26,2006	Amer Khan       Originally created
+#Script:   		This script monitors if there are any distributors down
+#Jun 26 2006	Amer Khan       Originally created
+#Jan 01 2020	Rafael Bahia	Changed it to check if database is undergoing load or being materialized before alerting
+#								Script will now send one alert per agent down
 
 use Sys::Hostname;
 use strict;
@@ -50,7 +49,9 @@ for (my $i=0; $i <= $#results; $i++){
 	my $sds = $vec2[0];
 	my $db = $vec2[1];
 	$sds =~ s/^\s+//g;
-
+	
+	if ($sds =~ /CPDB4/) {next;} #comment this once CPDB4 comes back online
+	
 # print "Data source: $sds. Database $db\n";	
 
 my $check = `. /opt/sybase/SYBASE.sh

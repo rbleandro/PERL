@@ -40,7 +40,7 @@ print "cmf_security_list_refresh StartTime: $currTime, Hour: $startHour, Min: $s
 
 $currTime = localtime();
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data_lm
 go
 execute cmf_security_list_refresh

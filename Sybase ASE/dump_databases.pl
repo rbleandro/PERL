@@ -2,11 +2,12 @@
 
 #Script:   This script dumps various databases to the secondary servers
 #
-#Author:		Rafael Bahia
+#Author:		Amer Khan
 #Revision:
 #Date           Name            Description
 #----------------------------------------------------------------------------
-#Aug 14 2019	Rafael Bahia	1.Since all user databases have been added to the replication, this script was completely rewritten to refect this
+#Oct 12 2016	Amer Khan		Created
+#Aug 14 2019	Rafael Leandro	1.Since all user databases have been added to the replication, this script was completely rewritten to refect this
 #								2.Added flags to control script behavior
 #								3.Made the script compliant with some best practices
 #								4.Removed databases included in the replication schema

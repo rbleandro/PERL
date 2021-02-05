@@ -12,8 +12,8 @@
 $report_date = `echo "sysmon_\`date '+%d_%H_%M'\`"`;
 
 $sysmonError = `. /opt/sap/SYBASE.sh
-isql -Usa -Ps9b2s3 -SCPSYBTEST -o/opt/sap/cron_scripts/cron_logs/ase_perf_logs/sysmon_\`date "+%d_%H_%M"\` <<EOF 2>&1
-sp_sysmon "00:10:00"
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -o/opt/sap/cron_scripts/cron_logs/ase_perf_logs/sysmon_\`date "+%d_%H_%M"\` <<EOF 2>&1
+sp_sysmon "00:00:30"
 go
 exit
 EOF
@@ -23,8 +23,8 @@ print "Any messages from server: $sysmonError\n\n";
 if($sysmonError =~ /no|not/ || $sysmonError =~ /Error/i){
    print "Errors may have occurred during sysmon report execution...\n\n";
 `/usr/sbin/sendmail -t -i <<EOF
-To: rleandro\@canpar.com
-Subject: ERROR - SYSMON REPORT EXECUTION FOR CPSYBTEST
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
+Subject: ERROR - SYSMON REPORT EXECUTION FOR $prodserver
 
 Following status was received after sysmon report procedure execution
 $sysmonError

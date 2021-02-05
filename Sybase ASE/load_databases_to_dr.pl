@@ -100,7 +100,7 @@ else
 
 if ($resumerep == 1){
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -Shqvsybrep3 <<EOF 2>&1
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -Shqvsybrep3 <<EOF 2>&1
 resume connection to $prodserver.$database
 go
 exit

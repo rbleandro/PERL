@@ -43,7 +43,7 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
 use mpr_data
 go
 declare \@fiscal int

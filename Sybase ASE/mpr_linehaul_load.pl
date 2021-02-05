@@ -75,7 +75,7 @@ print "Linehaul Load StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 #Uploading data...
 if (-e "/opt/sybase/bcp_data/mpr_data/gl_extract/linehaul_data.$period[1]"){ 
 $bcp_msg = `. /opt/sybase/SYBASE.sh
-bcp mpr_data..linehaul_bcp in /opt/sybase/bcp_data/mpr_data/gl_extract/linehaul_data.$period[1] -Usa -S$prodserver -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -c -t"," -F2 -r"\r\n" -b1000`;
+bcp mpr_data..linehaul_bcp in /opt/sybase/bcp_data/mpr_data/gl_extract/linehaul_data.$period[1] -Ucronmpr -S$prodserver -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -c -t"," -F2 -r"\r\n" -b1000`;
 }else{
  die "File not available yet: linehaul_data.$period[1] , dying\n\n";
 }
@@ -96,7 +96,7 @@ die "Can't Continue\n\n";
 }
 
 $sqlError = `. /opt/sybase/SYBASE.sh
-isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use mpr_data
 go
 set clientapplname \'Linehaul Data Upload\'     

@@ -28,7 +28,7 @@ $server = $ARGV[0];
 #Execute purge now 
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server -n -b -s'\t'<<EOF 2>&1
+isql -Usybmaint -P\`/opt/sybase/cron_scripts/getpass.pl sybmaint\` -S$server -n -b -s'\t'<<EOF 2>&1
 use cpscan
 go
 truncate table tttl_ev_event_deletes

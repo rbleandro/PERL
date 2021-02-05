@@ -30,13 +30,12 @@ $prodserver = hostname();
 #Set starting variables
 $currTime = localtime();
 $startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
 $startMin=sprintf('%02d',((localtime())[1]));
 
 print "purge_tunnel_metrics StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cpscan
 go
 declare \@dateVar datetime

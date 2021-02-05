@@ -36,13 +36,13 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
 use sort_data
 go
 if datename(dw,getdate()) = 'Sunday'
 begin
 set rowcount 2500000
-delete sort_data..overhead_package_scans 
+delete sort_data..overhead_package_scans
 from sort_data..overhead_package_scans (index idxupd) where updated_on < dateadd(dd, -45, getdate())
 end
 else
@@ -51,7 +51,7 @@ set rowcount 150000
 delete sort_data..overhead_package_scans
 from sort_data..overhead_package_scans (index idxupd) where updated_on < dateadd(dd, -45, getdate())
 end
-go   
+go
 exit
 EOF
 `;

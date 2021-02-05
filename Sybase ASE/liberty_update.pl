@@ -43,7 +43,7 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 #
 print "***Initiating liberty_update At:".localtime()."***\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Urhload -P\`/opt/sap/cron_scripts/getpass.pl rhload\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 declare \@days int
 select \@days = 20
 select \@days = \@days * -1

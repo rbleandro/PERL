@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 
 #Script:   This script dumps various databases to the secondary servers
-#
 #Author:		Rafael Leandro
-#Revision:
 #Date           Name            Description
 #----------------------------------------------------------------------------
 #Aug 14 2019	Rafael Leandro		Created
+#Sep 01 2020	Rafael Leandro		Corrected alert message
+#Oct 11 2020	Rafael Leandro		Now it will also copy perl scripts to the secondary servers
 
 #Usage Restrictions
 use Sys::Hostname;
@@ -65,9 +65,9 @@ print "No Previous process is running, continuing\n";
 
 print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
-my $cronbkp=system("/usr/bin/crontab -l > /opt/sap/cron_scripts/cronjobs.bk");
-my $stbycopy=system("scp -p /opt/sap/cron_scripts/cronjobs.bk sybase\@$stbyserver:/opt/sap/cron_scripts");
-my $drcopy=system("scp -p /opt/sap/cron_scripts/cronjobs.bk sybase\@$drserver:/opt/sap/cron_scripts");
+system("/usr/bin/crontab -l > /opt/sap/cron_scripts/cronjobs.bk");
+
+my $cronbkp= $? >> 8;
 
 if ($cronbkp !=0){
 print $cronbkp."\n";
@@ -76,13 +76,16 @@ $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
-Subject: Errors - dump_databases at $finTime during generate backup stage
+Subject: Errors - backup_cron_jobs at $finTime during generate backup stage
 
 $cronbkp
 EOF
 `;
 die;
 }
+
+system("scp -p /opt/sap/cron_scripts/*.* sybase\@$stbyserver:/opt/sap/cron_scripts");
+my $stbycopy=$? >> 8;
 
 if ($stbycopy !=0){
 print $stbycopy."\n";
@@ -91,7 +94,7 @@ $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
-Subject: Errors - dump_databases at $finTime during copy to stdby stage
+Subject: Errors - backup_cron_jobs at $finTime during copy to stdby stage
 
 $stbycopy
 EOF
@@ -99,20 +102,23 @@ EOF
 die;
 }
 
-if ($drcopy !=0){
-print $drcopy."\n";
-
-$finTime = localtime();
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: Errors - dump_databases at $finTime during copy to dr stage
-
-$drcopy
-EOF
-`;
-die;
-}
+#uncomment this section when the DR server comes back online
+#system("scp -p /opt/sap/cron_scripts/*.* sybase\@$drserver:/opt/sap/cron_scripts");
+#my $drcopy=$? >> 8;
+#if ($drcopy !=0){
+#print $drcopy."\n";
+#
+#$finTime = localtime();
+#
+#`/usr/sbin/sendmail -t -i <<EOF
+#To: $mail\@canpar.com
+#Subject: Errors - backup_cron_jobs at $finTime during copy to dr stage
+#
+#$drcopy
+#EOF
+#`;
+#die;
+#}
 
 print "Spitting cron entries here as well as secondary backup";
 my $cron=`/usr/bin/crontab -l`;

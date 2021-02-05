@@ -46,7 +46,7 @@ print "\n###Running update on Database:$database from Server:$prodserver on Host
 
 print "***Initiating update At:".localtime()."***\n";
 $error = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
 use cpscan
 go
 execute update_consignee_city

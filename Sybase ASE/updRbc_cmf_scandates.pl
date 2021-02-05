@@ -41,11 +41,11 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 #Execute  sp_updRbc_cmf_scandates
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -w300 <<EOF 2>&1
-use cmf_data    
-go   
-execute sp_updRbc_cmf_scandates   
-go    
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -w300 <<EOF 2>&1
+use cmf_data
+go
+execute sp_updRbc_cmf_scandates
+go
 exit
 EOF
 `;

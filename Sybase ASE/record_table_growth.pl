@@ -19,8 +19,10 @@ $startHour=sprintf('%02d',((localtime())[2]));
 $startMin=sprintf('%02d',((localtime())[1]));
 print "record_table_growth StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -b -n<<EOF 2>&1
 exec cpscan..record_table_growth
+go
+exec scan_compliance..record_table_growth
 go
 exec lmscan..record_table_growth
 go

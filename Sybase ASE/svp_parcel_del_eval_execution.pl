@@ -50,7 +50,7 @@ print "Date to check from : $date_flag \n";
 print "svp_proc_parcel_deltermupdation StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use svp_cp
 go
 set clientapplname \'svp_proc_parcel_deltermupdation\'    
@@ -65,7 +65,7 @@ print $sqlError."\n";
 if($sqlError =~ /no|not/){
       print "Errors may have occurred during update...\n\n";
 `/usr/sbin/sendmail -t -i <<EOF
-To: kkotur\@canpar.com,aahmed\@canpar.com,forourke\@canpar.com
+To: kkotur\@canpar.com,aahmed\@canpar.com,CANPARDatabaseAdministratorsStaffList\@canpar.com,forourke\@canpar.com
 Subject: Status - svp_proc_parcel_deltermupdation 
 
 Following status was received during svp_proc_parcel_deltermupdation that started on $currTime

@@ -41,7 +41,7 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use mpr_data
 go
 truncate table vp_alltotals_terminal
@@ -66,7 +66,7 @@ die "Email sent\n";
 }
 
 if (-e "/opt/sap/bcp_data/mpr_data/vp_terminal/vp_alltotals_terminal.dat"){
-$sqlError = `bcp mpr_data..vp_alltotals_terminal in /opt/sap/bcp_data/mpr_data/vp_terminal/vp_alltotals_terminal.dat -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -c -t"|:|" -r"||\r\n"`;
+$sqlError = `bcp mpr_data..vp_alltotals_terminal in /opt/sap/bcp_data/mpr_data/vp_terminal/vp_alltotals_terminal.dat -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -c -t"|:|" -r"||\r\n"`;
 }
 
 print $sqlError."\n";
@@ -86,7 +86,7 @@ EOF
 
 # Process data from vp_alltotals_terminal into secondary tables...
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -w300 <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -w300 <<EOF 2>&1
 use mpr_data
 go
 execute vp_alltotals_terminal_feed

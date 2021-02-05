@@ -47,11 +47,11 @@ print "No Previous process is running, continuing\n";
 print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
 use cpscan
 go
 exec generate_virtual_ONRs
-go   
+go
 exit
 EOF
 `;
@@ -66,7 +66,7 @@ if ( $sqlError =~ /Msg 2601/){die;}
 $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
-To:CANPARDatabaseAdministratorsStaffList\@canpar.com 
+To:CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: Error: generate_virtual_ONRs at $finTime
 
 $sqlError

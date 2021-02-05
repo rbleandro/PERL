@@ -28,7 +28,7 @@ $server = $ARGV[0];
 
 print "***Initiating device find At:".localtime()."***\n";
 $error = `. /opt/sybase/SYBASE.sh
-isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$server <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$server <<EOF 2>&1
 USE cpscan
 go
 exec find_devices

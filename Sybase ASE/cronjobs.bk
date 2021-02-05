@@ -46,57 +46,29 @@
 00 04 * * * /opt/sap/cron_scripts/purge_cpscan_tttl_batchdown.pl > /opt/sap/cron_scripts/cron_logs/purge_cpscan_tttl_batchdown.log 2>&1
 00 03 * * * /opt/sap/cron_scripts/purge_rev_hist_bcxref2.pl > /opt/sap/cron_scripts/cron_logs/purge_rev_hist_bcxref2.log 2>&1
 00 04 * * * /opt/sap/cron_scripts/purge_cmf_data_lm_purge_pr_waybills_log.pl > /opt/sap/cron_scripts/cron_logs/purge_cmf_data_lm_purge_pr_waybills_log.log 2>&1
+00 04 * * * /opt/sap/cron_scripts/purge_tttl_ev_event_hospital.pl > /opt/sap/cron_scripts/cron_logs/purge_tttl_ev_event_hospital.log 2>&1
 ##
-###Monitor Sybase Server Error Log
+############################################################ START OF MONITORING JOBS ############################################################
+00 00 * * * /opt/sap/cron_scripts/monitor_thresholds_missing.pl > /opt/sap/cron_scripts/cron_logs/monitor_thresholds_missing.log 2>&1
 * * * * * /opt/sap/cron_scripts/monitor_errorlog.pl > /opt/sap/cron_scripts/cron_logs/monitor_errorlog.log 2>&1
-##
-###Monitor Sybase database on standby server every 5 minutes
 00,30 * * * * /opt/sap/cron_scripts/monitor_sybase.pl > /opt/sap/cron_scripts/cron_logs/monitor_sybase.log 2>&1
-##
-###Monitor Blocks every 5 minutes
 */5 * * * * /opt/sap/cron_scripts/monitor_blocks.pl > /opt/sap/cron_scripts/cron_logs/monitor_blocks.log 2>&1
-##
-###Monitor IOs every 10 minutes
 */10 * * * * /opt/sap/cron_scripts/monitor_ios.pl > /opt/sap/cron_scripts/cron_logs/monitor_ios.log 2>&1
-##
-###Monitor Server Health every 5 minutes
 */5 * * * * /opt/sap/cron_scripts/monitor_server.pl -t 90 > /opt/sap/cron_scripts/cron_logs/monitor_server.log 2>&1
-##
-###Monitor Number of Server connections every 5 minutes
-##*/5 * * * * /opt/sap/cron_scripts/monitor_num_sessions.pl -t 4500 > /opt/sap/cron_scripts/cron_logs/monitor_num_sessions.log 2>&1
-##
-###Monitor cronjob for commented every day
 00 09 * * * /opt/sap/cron_scripts/monitor_cronjobs.pl crontab > /opt/sap/cron_scripts/cron_logs/monitor_cronjobs.log 2>&1
-##
-###Monitor memory usage
 */5 * * * * /opt/sap/cron_scripts/monitor_memory_usage.pl > /opt/sap/cron_scripts/cron_logs/monitor_memory_usage.log 2>&1
-##
-###Monitor long running transactions
 */30 07-23 * * * /opt/sap/cron_scripts/monitor_long_running_transactions.pl > /opt/sap/cron_scripts/cron_logs/monitor_long_running_transactions.log 2>&1
-##
-###Monitor database log size
 */5 * * * * /opt/sap/cron_scripts/monitor_db_tlog_size.pl > /opt/sap/cron_scripts/cron_logs/monitor_db_tlog_size.log 2>&1
-##
-###Monitor failed jobs
 00 09 * * * /opt/sap/cron_scripts/monitor_failed_jobs.pl > /opt/sap/cron_scripts/cron_logs/monitor_failed_jobs.log 2>&1
-##
-###Monitor the space of key drives in the OS. Created after a problem with the Commvault agent that would hang and fill up the root drive.
 00 06 * * * /opt/sap/cron_scripts/monitor_disk_space.pl > /opt/sap/cron_scripts/cron_logs/monitor_disk_space.log 2>&1
-##
-###Monitor login and role assigment synchronization accross ASE servers.
 00 06 * * * /opt/sap/cron_scripts/monitor_login_synchronization.pl > /opt/sap/cron_scripts/cron_logs/monitor_login_synchronization.log 2>&1
-##
-###Monitor long running sessions 
 */30 07-23 * * 1-5 /opt/sap/cron_scripts/monitor_long_running_sessions.pl > /opt/sap/cron_scripts/cron_logs/monitor_long_running_sessions.log 2>&1
-##
-###Collect heavy queries 
 */30 * * * * /opt/sap/cron_scripts/monitor_heavy_queries.pl > /opt/sap/cron_scripts/cron_logs/monitor_heavy_queries.log 2>&1
-##
-###Send weekly server health report
 00 09 * * 0 /opt/sap/cron_scripts/server_health_report.pl > /opt/sap/cron_scripts/cron_logs/server_health_report.log 2>&1
-##
+##* * * * * /opt/sap/cron_scripts/monitor_uss_connections.pl > /opt/sap/cron_scripts/cron_logs/monitor_uss_connections.log 2>&1
 ###Monitor hub_db rows pending processing
 */15 06-22 * * * /opt/sap/cron_scripts/monitor_hubdb_pending_rows.pl > /opt/sap/cron_scripts/cron_logs/monitor_hubdb_pending_rows.log 2>&1
+############################################################ END OF MONITORING JOBS ############################################################
 ##
 ###Frasier's Job To Update Libery DB through a stored proc
 00 03 * * 1-6 /opt/sap/cron_scripts/liberty_update.pl > /opt/sap/cron_scripts/cron_logs/liberty_update.log 2>&1
@@ -142,13 +114,12 @@
 #
 55 23 * * * /opt/sap/cron_scripts/AddCorrExpiredUpdate.pl > /opt/sap/cron_scripts/cron_logs/AddCorrExpiredUpdate.log 2>&1
 ##
-00 00 * * 0 /opt/sap/cron_scripts/cmf_security_list_refresh.pl > /opt/sap/cron_scripts/cron_logs/cmf_security_list_refresh.log 2>&1
+00 00 * * * /opt/sap/cron_scripts/cmf_security_list_refresh.pl > /opt/sap/cron_scripts/cron_logs/cmf_security_list_refresh.log 2>&1
 ##
-00 00 * * 0 /opt/sap/cron_scripts/cmf_security_list_refresh_lm.pl /opt/sap/cron_scripts/cron_logs/cmf_security_list_refresh_lm.log 2>&1
+00 00 * * * /opt/sap/cron_scripts/cmf_security_list_refresh_lm.pl /opt/sap/cron_scripts/cron_logs/cmf_security_list_refresh_lm.log 2>&1
 ##
-00 04 * * * /opt/sap/cron_scripts/add_new_customers_to_pr_tables.pl > /opt/sap/cron_scripts/cron_logs/add_new_customers_to_pr_tables.log 2>&1
-#
 00 * * * * /opt/sap/cron_scripts/copy_h_barcode_scans_from_lmscan.pl > /opt/sap/cron_scripts/cron_logs/copy_h_barcode_scans_from_lmscan.log 2>&1
+55 * * * * /opt/sap/cron_scripts/mobitrax_transfer_pieces_ino.pl > /opt/sap/cron_scripts/cron_logs/mobitrax_transfer_pieces_ino.log 2>&1
 #
 ### ============================================== DAILY CANPAR MPR PROCS ==================================================
 00 12 * * * /opt/sap/cron_scripts/vp_alltotals.pl > /opt/sap/cron_scripts/cron_logs/vp_alltotals.log 2>&1

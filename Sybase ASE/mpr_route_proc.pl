@@ -41,7 +41,7 @@ print "mpr_route_proc StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 $currTime = localtime();
 print "\nAll flags are set running proc now $currTime\n\n";
 $sqlError = `. /opt/sybase/SYBASE.sh
-isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use mpr_data
 go
 set replication off
@@ -70,7 +70,7 @@ die "Cant continue, there were errors in this mpr_route_proc at $currTime \n";
 }
 
 #$sqlError = `. /opt/sybase/SYBASE.sh
-#isql -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$standbyserver -b -n<<EOF 2>&1
+#isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$standbyserver -b -n<<EOF 2>&1
 #use mpr_data
 #go
 #execute mpr_route_proc

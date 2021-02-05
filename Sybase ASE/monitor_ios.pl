@@ -22,6 +22,7 @@ my $skipcheckprod=0;
 my $finTime = localtime();
 my @prodline="";
 my $tio=100000;
+my $autokill=0;
 
 GetOptions(
     'skipcheckprod|s=s' => \$skipcheckprod,
@@ -69,10 +70,27 @@ CASE clienthostname WHEN '' THEN isnull(hostname,ipaddr) WHEN NULL THEN isnull(h
 ,'exec sp_showplan('+cast(spid as varchar(100))+')' as getPlan,'#'
 ,'dbcc sqltext('+cast(spid as varchar(100))+')' as getQuery
 from master..sysprocesses
-where physical_io > (case when clientapplname like 'rpt_%' then $tiosec else $tio end )
+where physical_io > (case 	when clientapplname like 'rpt_%' then $tio*4
+							when clientapplname like 'dqm_freight_dist%' then $tiosec*4
+							when clientapplname like 'qsp_getRTSListbyTerm' then $tiosec
+							when clientapplname like 'generate_svb_data%' then $tio*7
+							when clientapplname like 'svb_generate_%' then $tio*10
+							when clientapplname like 'scan_compliance_update_cp' then $tio*4
+							when clientapplname like 'svp_%' then $tio*6
+							when clientapplname like 'process_parcel_records_missing' then $tio*3
+							when clientapplname like 'feed_svp_origin_stats' then $tio*10
+							when clientapplname like 'feed_svp_stats' then $tio*7
+							when clientapplname like 'feed_svp_stats_interline' then $tio*10
+							when clientapplname like 'update_cmfmetricsty' then $tio*20
+							when clientapplname like 'svp_proc_source_failure' then $tiosec*2
+							when clientapplname like 'lh_actual_dpts' then $tio*5
+							when clientapplname like 'qsp_getRTSListbyTerm' then $tio*2
+							when clientapplname like 'cmfaudit_move_history' then $tio*2
+							when isnull(suser_name(suid),'Unknown') in ('sybmaint','DBA') then $tio*3						
+							else $tio end )
 and suid > 0
 and status <> 'recv sleep'
-and suser_name(suid) not in ('sa','sybmaint')
+and suser_name(suid) not in ('sybmaint')
 --and cmd not like 'UPDATE STATISTICS%'
 and spid not in (select spid from dba.dbo.sessionWhiteList)
 order by physical_io desc
@@ -183,14 +201,43 @@ die "Email sent";
 $error2 =~ s/DBCC execution completed.*//g;
 $error2 =~ s/Subordinate SQL Text: //g;
 $error2 =~ s/SQL Text:.*//g;
+if ($error2 =~ /SELECT top 1 evt.status,evt.scan_time_date/ && $error2 =~ /evt.status='RTN'/ && $error2 =~ /evt.scan_time_date >='1900-01-01 00:00:00.000'/ && $error2 =~ /order by evt.scan_time_date desc/){
+$autokill=1;
+my $kill = `. /opt/sap/SYBASE.sh
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b -w400<<EOF 2>&1
+kill $spid
+go
+exit
+EOF
+`;
 
-if ($error2 =~ /MERGE JOIN/ || $error2 =~ /Positioning at start/ || $error2 =~ /Table Scan/ || $error2 =~ /This step involves sorting/ || $error2 =~ /Positioning at index start/){
+if($kill =~ /Msg/)
+{
+print $kill;
+`/usr/sbin/sendmail -t -i <<EOF
+To: $mail\@canpar.com
+Subject: ERROR - monitor_ios script(kill process).
+$kill
+EOF
+`;
+$finTime = localtime();
+print $finTime;
+die "Email sent";
+}
+}
+
+if ($error2 =~ /MERGE JOIN/ || $error2 =~ /Positioning at start/ || $error2 =~ /Table Scan/ || $error2 =~ /This step involves sorting/ || $error2 =~ /Positioning at index start/ || $error2 =~ /Positioning at index end/){
 	$htmlmail .= "<p><b><font color='red'>Heavy operations such as table scan or merge joins were detected in the execution plan. Review the query and the tables involved as soon as possible.</font></b></p>\n";
 }
 else
 {
 	$htmlmail .= "<p><b><font color='blue'>No heavy operations detected in the execution plan. You should still check if this query can be tunned, specially if it runs frequently during peak hours.</font></b></p>\n";
 }
+
+if ($autokill == 1){
+	$htmlmail .= "<p><b><font color='blue'>Session $spid was automatically killed. Please check with development what can be done to tune the query.</font></b></p>\n";
+}
+
 my $plandetails="";
 my $linecontrol=1;
 my $fromtable=0;
@@ -206,7 +253,7 @@ for (my $i=0; $i <= $#results; $i++){
 		if ($results[$i] =~ /FROM TABLE/){$fromtable=1;$rttflag=0;}
 		if ($results[$i] =~ /#/ && $fromtable==1){$temptable=1;$fromtable=0;}
 		if ($results[$i] =~ /Using I\/O/){$temptable=0;}
-		if (($results[$i] =~ /MERGE JOIN/ || $results[$i] =~ /Positioning at start/ || $results[$i] =~ /Table Scan/ || $results[$i] =~ /This step involves sorting/ || $results[$i] =~ /Positioning at index start/) && $temptable==0){
+		if (($results[$i] =~ /MERGE JOIN/ || $results[$i] =~ /Positioning at start/ || $results[$i] =~ /Table Scan/ || $results[$i] =~ /This step involves sorting/ || $results[$i] =~ /Positioning at index start/ || $results[$i] =~ /Positioning at index end/) && $temptable==0){
 			$plandetails.="<p style=\"background-color: #FF0000\"><font color='white'>" . $results[$i] . "</font></p>";
 			
 		}else{

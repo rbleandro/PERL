@@ -48,7 +48,7 @@ print "\n###Running purge on Database:$database from Server:$prodserver on Host:
 
 print "***Initiating purge At:".localtime()."***\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF
 use cpscan
 go
 delete DELETED_delivery_address

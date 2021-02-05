@@ -24,7 +24,7 @@ print "No Previous process is running, continuing\n";
 print "\n###Running resync_terminal_hospital to cpiq on Host:".`hostname`."  ###\n";
 
 my $dbsqlOut = `. /opt/sybase/IQ-16_0/IQ-16_0.sh
-dbisql -c "uid=DBA;pwd=\`/opt/sybase/cron_scripts/getpass.pl DBA\`" -host localhost -port 2638 -nogui -onerror exit 'execute resync_cp_terminal_hospital' 2>&1`;
+dbisql -c "uid=DBA;pwd=\`/opt/sybase/cron_scripts/getpass.pl DBA\`" -host localhost -port 2638 -nogui -onerror exit 'execute resync_terminal_hospital' 2>&1`;
 
 #print "$dbsqlOut\n";
 if ($dbsqlOut =~ /Error/ || $dbsqlOut =~ /error/ || $dbsqlOut !~ /Execution/){

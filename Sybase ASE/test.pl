@@ -1,55 +1,35 @@
-#!/usr/bin/perl
-
-#Script:   	This script checks for long running transactions that are preventing database log flush
-#Author:   	Rafael Leandro
-#Revision:
-#Date			Name				Description
-#---------------------------------------------------------------------------------
-#Aug 18 2019	Rafael Leandro		Originally created
+#!/usr/bin/perl -w
 
 #Usage Restrictions
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
+use Sys::Hostname;
 
-my $mail = 'CANPARDatabaseAdministratorsStaffList@canpar.com; jpepper@canpar.com; Kenny.Ip@loomis-express.com';
+my $prodserver = hostname();
+my $drserver = 'CPDB4';
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
 my $finTime = localtime();
-my @prodline="";
+my $stbyserver="";
 
 GetOptions(
     'skipcheckprod|s=s' => \$skipcheckprod,
 	'to|r=s' => \$mail
-) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --threshold|t 10\n";
+) or die "Usage: $0 --skipcheckprod 0 --to rleandro\n";
 
-if ($skipcheckprod == 0){
-	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-	while (<PROD>){
-		@prodline = split(/\t/, $_);
-		$prodline[1] =~ s/\n//g;
-	}
-	close PROD;
-	if ($prodline[1] eq "0" ){
-		print "standby server \n";
-		die "This is a stand by server\n";
-	}
-}
+my @prodline="";
 
-my $prodserver = hostname();
-if ($prodserver =~ /cpsybtest/)
-{
-$prodserver = "CPSYBTEST";
-}
+if ($prodserver eq 'CPDB2'){ $stbyserver = 'CPDB1'; } else { $stbyserver = 'CPDB2'; }
+
+print "Prod: $prodserver....Stby: $stbyserver \n";
 
 
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail
-Subject: ERROR - monitor_long_running_transactions.pl script.
-just a test
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-
+system("/usr/bin/crontab -l > /opt/sap/cron_scripts/cronjobs.bk");
+my $cronbkp = $? >> 8;
+print "$cronbkp\n\n";
+system("scp -p /opt/sap/cron_scripts/cronjobs.bk sybase\@$stbyserver:/opt/sap/cron_scripts");
+my $stbycopy = $? >> 8;
+print "$stbycopy\n\n";
+#my $drcopy=system("scp -p /opt/sap/cron_scripts/cronjobs.bk sybase\@$drserver:/opt/sap/cron_scripts"); #uncomment this when the DR server comes back online

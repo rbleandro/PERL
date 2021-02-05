@@ -33,14 +33,14 @@ $startMin=sprintf('%02d',((localtime())[1]));
 print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -w300 <<EOF 2>&1
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -w300 <<EOF 2>&1
 use sybsecurity
 go
 execute audit_thresh
 go
 exit
 EOF
-bcp sybsecurity..audit_report_vw out /tmp/audit_report_vw.tdl -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -c -t"\t"
+bcp sybsecurity..audit_report_vw out /tmp/audit_report_vw.tdl -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -c -t"\t"
 `;
 
 if ($sqlError =~ /Msg/ || $sqlError =~ /Possible Issue Found/ || $sqlError =~ /Error/ || $sqlError =~ /ERROR/ || $sqlError =~ /error/){
@@ -62,8 +62,10 @@ die;
 `gzip /tmp/audit_report_vw.tdl`;
 
 
-`/usr/bin/mutt -s "Database weekly changes - Audit report"  "servicedesk\@canpar.com,frank_orourke\@canpar.com,jim_pepper\@canpar.com,CANPARDatabaseAdministratorsStaffList\@canpar.com" -a /tmp/audit_report_vw.tdl.gz <<EOF
+`/usr/bin/mutt -s "Database weekly changes - Audit report"  servicedesk\@canpar.com,forourke\@canpar.com,jpepper\@canpar.com,CANPARDatabaseAdministratorsStaffList\@canpar.com -a /tmp/audit_report_vw.tdl.gz <<EOF
 Here is your weekly audit report for database changes on Sybase production server.
+
+Please assign this ticket to Frank O'Rourke in development.
 
 Thanks,
 The DBA team.

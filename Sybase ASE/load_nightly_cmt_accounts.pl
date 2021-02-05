@@ -32,7 +32,7 @@ $startMin=sprintf('%02d',((localtime())[1]));
 
 print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '04999'
@@ -67,7 +67,7 @@ EOF
 print "Running refresh for Running Room account ... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05009'
@@ -111,7 +111,7 @@ print "Running refresh for Running Room account ... CurrTime: $currTime, Hour: $
 print "Running refresh for Running Room account Jesse ... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '04952'
@@ -149,7 +149,7 @@ EOF
 print "Running refresh for Running Room account Jesse ... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account in ('05051', '05052','05053')
@@ -187,7 +187,7 @@ EOF
 print "Running refresh for Running Room account Keith/Jesse ... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05059'
@@ -226,7 +226,7 @@ EOF
 print "Running refresh for Running Room account Keith/Jesse ... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '00610'
@@ -268,7 +268,7 @@ EOF
 print "Running refresh for Bestsellers--Retail Only  account Requested By Jesse On May 10, 2010... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05062'
@@ -307,7 +307,7 @@ EOF
 print "Running refresh for Bestsellers - Jack And Jones account Requested By Jesse On May 10, 2010... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05040'
@@ -346,7 +346,7 @@ EOF
 print "Running refresh for  Vero Moda account Requested By Jesse On May 10, 2010... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05076'
@@ -385,7 +385,7 @@ EOF
 print "Running refresh for  Vero Moda account Requested By Jesse On Apr 29, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05079'
@@ -424,7 +424,7 @@ EOF
 print "Running refresh for  Vero Moda account Requested By Jesse On Apr 29, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05078'
@@ -464,7 +464,7 @@ EOF
 print "Running room for account Requested By Jesse On May 12, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05080'
@@ -503,7 +503,7 @@ EOF
 print " Swarski account Requested By Jesse On Aug 3, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05049'
@@ -542,7 +542,7 @@ EOF
 print "  Requested By Jesse On Oct 14, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05094'
@@ -581,7 +581,7 @@ EOF
 print "  Requested By Jesse On Feb 3, 2012... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05006'
@@ -620,7 +620,7 @@ EOF
 print "  Requested By Jesse On Feb 3, 2012... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05105'
@@ -658,7 +658,7 @@ EOF
 print "  Requested By Jesse On July 10, 2012... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '00579'
@@ -700,7 +700,7 @@ EOF
 print "  Requested By Jesse On July 10, 2012... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05140'
@@ -738,7 +738,7 @@ EOF
 print " Parasuc account Requested By Jesse On Aug 29, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '00024'
@@ -775,7 +775,7 @@ EOF
 ######################3#
 print " Boathouse account Requested By Heather On June 4th, 2018... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05106'

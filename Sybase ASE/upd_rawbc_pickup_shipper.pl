@@ -47,16 +47,20 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
 use lmscan
 go
+exec upd_rawbc_no_pickup_shipper_daily
+go
 exec upd_rawbc_pickup_shipper
-go 
+go
 exec upd_rawbc_pickup_shipper_not_found
-go  
+go
 exit
 EOF
 `;
+
+
 if ($sqlError =~ /Msg/){
 print $sqlError."\n";
 
@@ -70,5 +74,6 @@ $sqlError
 EOF
 `;
 }
+
 $finTime = localtime();
 print "Time Finished: $finTime\n";

@@ -43,18 +43,18 @@ if (defined $resumerep) {
 
 print "Server Being Loaded: $prodserver\n";
 
-$my_pid = getppid();
-$isProcessRunning =`ps -ef|grep sybase|grep load_databases_to_stdby.pl|grep -v grep|grep -v $my_pid|grep -v "vim load_databases_to_stdby.pl"|grep -v "less load_databases_to_stdby.pl"`;
-
-#print "My pid: $my_pid\n";
-print "Running: $isProcessRunning \n";
-
-if ($isProcessRunning){
-die "\n Can not run, previous process is still running \n";
-
-}else{
-print "No Previous process is running, continuing\n";
-}
+#$my_pid = getppid();
+#$isProcessRunning =`ps -ef|grep sybase|grep load_databases_to_stdby.pl|grep -v grep|grep -v $my_pid|grep -v "vim load_databases_to_stdby.pl"|grep -v "less load_databases_to_stdby.pl"`;
+#
+##print "My pid: $my_pid\n";
+#print "Running: $isProcessRunning \n";
+#
+#if ($isProcessRunning){
+#die "\n Can not run, previous process is still running \n";
+#
+#}else{
+#print "No Previous process is running, continuing\n";
+#}
 
 #Cleaning up the backup volume to free space (deletes all files older than 7 days)
 `find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
@@ -92,10 +92,26 @@ die;
 }
 else
 {
+	
+$sqlError = `. /opt/sap/SYBASE.sh
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
+use $database
+go
+exec sp_dropuser $database\_maint
+go
+exec sp_dropalias $database\_maint
+go
+exec sp_addalias $database\_maint,'dbo'
+go
+exit
+EOF
+`;
+
+print "$sqlError\n";
 
 if ($resumerep == 1){
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -Shqvsybrep3 <<EOF 2>&1
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -Shqvsybrep3 <<EOF 2>&1
 resume connection to $prodserver.$database
 go
 exit

@@ -41,11 +41,11 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
 use cmf_data_lm
 go
-exec update_cmfmetricsty    
-go   
+exec update_cmfmetricsty
+go
 exit
 EOF
 `;
@@ -55,7 +55,7 @@ print $sqlError."\n";
 $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
-To: aarain\@canpar.com,alex_vasilenco\@canpar.com
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com,alex_vasilenco\@canpar.com
 Subject: update_cmfmetricsty completed at $finTime
 
 $sqlError

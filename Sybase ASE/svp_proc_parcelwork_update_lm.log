@@ -1,7 +1,0 @@
-svp_proc_parcelwork For Loomis StartTime: Fri Mar 30 09:35:01 2018, Hour: 09, Min: 35
-Running:  
-No Previous process is running, continuing
-stty: standard input: Inappropriate ioctl for device
-stty: standard input: Inappropriate ioctl for device
-Died at /opt/sap/cron_scripts/svp_proc_parcelwork_update_lm.pl line 80, <PROD> line 1.
-Data is uptodate

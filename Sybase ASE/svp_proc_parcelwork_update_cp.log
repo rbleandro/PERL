@@ -1,6 +1,0 @@
-svp_proc_parcelwork For Canpar StartTime: Fri Mar 30 09:44:01 2018, Hour: 09, Min: 44
-
- Can not run, previous process is still running 
-Running: sybase   23750 23741  0 02:05 ?        00:00:00 /bin/sh -c /opt/sap/cron_scripts/svp_proc_parcelwork_update_cp.pl > /opt/sap/cron_scripts/cron_logs/svp_proc_parcelwork_update_cp.log 2>&1
-sybase   23755 23750  0 02:05 ?        00:00:00 /usr/bin/perl -w /opt/sap/cron_scripts/svp_proc_parcelwork_update_cp.pl
- 

@@ -46,7 +46,7 @@ print "StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 $sqlError = ""; # Initialize Var
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use cpscan
 go
 execute AddCorrExpiredUpdate

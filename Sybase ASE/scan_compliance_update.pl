@@ -34,14 +34,14 @@ print "StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 $sqlError = ""; # Initialize Var
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
-use lmscan
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+use scan_compliance
 go
-execute dbo.scan_compliance_update NULL
+execute dbo.scan_compliance_update_cp NULL
 go
-use cpscan
+use scan_compliance
 go
-execute dbo.scan_compliance_update NULL
+execute dbo.scan_compliance_update_lm NULL
 go
 exit
 EOF

@@ -33,7 +33,7 @@ $prodserver = hostname();
 #Execute purge now 
 
 $error = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -n -b -s'\t'<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'\t'<<EOF 2>&1
 use cmf_data
 go
 delete rc_zwdisc_inserts where inserted_on < dateadd(dd,-2,getdate())

@@ -43,7 +43,7 @@ if ($prodline[1] eq "0" ){
 }
 
 my $grep="";
-$grep = `grep -iRl "warning" /opt/sap/cron_scripts/cron_logs ; grep -iRl "unable" /opt/sap/cron_scripts/cron_logs ; grep -iRl "compilation" /opt/sap/cron_scripts/cron_logs ; grep -iRl "No such file" /opt/sap/cron_scripts/cron_logs ; grep -iRl "not found" /opt/sap/cron_scripts/cron_logs ; grep -iRl "denied" /opt/sap/cron_scripts/cron_logs;`;
+$grep = `grep -iRl "warning" /opt/sap/cron_scripts/cron_logs ; grep -iRl "unable" /opt/sap/cron_scripts/cron_logs ; grep -iRl "compilation" /opt/sap/cron_scripts/cron_logs ; grep -iRl "No such file" /opt/sap/cron_scripts/cron_logs ; grep -iRl "not found" /opt/sap/cron_scripts/cron_logs ; grep -iRl "denied" /opt/sap/cron_scripts/cron_logs; grep -iRl "Bad IDN" /opt/sap/cron_scripts/cron_logs;grep -iRl "Error sending message" /opt/sap/cron_scripts/cron_logs;`;
 
 if ($grep ne "")
 {

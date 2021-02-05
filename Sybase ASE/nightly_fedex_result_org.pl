@@ -47,7 +47,7 @@ print $sqlError."\n";
 $finTime = localtime();
 
 `/usr/sbin/sendmail -t -i <<EOF
-To: ahsan_ahmed\@canpar.com
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: FedExResultSet completed at $finTime
 
 $sqlError

@@ -22,7 +22,7 @@ print "standby server \n";
 }
 use Sys::Hostname;
 $prodserver = hostname();
-$drserver = 'CPDB4';
+#$drserver = 'CPDB4';
 
 if (hostname() eq 'CPDB4') {
 	print "DR server \n";
@@ -55,19 +55,19 @@ $startHour=sprintf('%02d',((localtime())[2]));
 #$startHour=substr($currTime,0,4);
 $startMin=sprintf('%02d',((localtime())[1]));
 
-$my_pid = getppid();
-$isProcessRunning =`ps -ef|grep sybase|grep dump_databases_to_stdby.pl|grep -v grep|grep -v $my_pid|grep -v "vim dump_databases_to_stdby.pl"|grep -v "less dump_databases_to_stdby.pl"`;
+#$my_pid = getppid();
+#$isProcessRunning =`ps -ef|grep sybase|grep dump_databases_to_stdby.pl|grep -v grep|grep -v $my_pid|grep -v "vim dump_databases_to_stdby.pl"|grep -v "less dump_databases_to_stdby.pl"`;
 
 #print "My pid: $my_pid\n";
-print "Running: $isProcessRunning \n";
-
-if ($isProcessRunning){
-die "\n Can not run, previous process is still running \n";
-
-}else{
-print "No Previous process is running, continuing\n";
-}
-
+#print "Running: $isProcessRunning \n";
+#
+#if ($isProcessRunning){
+#die "\n Can not run, previous process is still running \n";
+#
+#}else{
+#print "No Previous process is running, continuing\n";
+#}
+#
 print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 
@@ -75,7 +75,11 @@ $sqlError = `. /opt/sap/SYBASE.sh
 isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
 use master
 go
+insert into dba.dbo.sessionWhiteList (spid,inserted_on) values(\@\@spid,getdate())
+go
 dump database $database to "/opt/sap/db_backups/$database.dmp" compression=100
+go
+delete from dba.dbo.sessionWhiteList where spid=\@\@spid
 go
 exit
 EOF

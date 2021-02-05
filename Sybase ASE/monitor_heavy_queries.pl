@@ -41,7 +41,7 @@ $prodserver = "CPSYBTEST";
 }
 
 my $error = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -n -b<<EOF 2>&1
+isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b<<EOF 2>&1
 set nocount on
 set proc_return_status off
 go
@@ -51,7 +51,7 @@ exit
 EOF
 `;
 
-if($error =~ /no|not|Msg/)
+if($error =~ /no|not|Msg/ && $error != /Msg 511/)
 {
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com

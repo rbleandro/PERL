@@ -1,16 +1,16 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Script:   This script delete rows from tttl_sortation table every Sunday    #
-#          that are less than 60 days old                                    #
-#                                                                            #
+
+#Script:   This script delete rows from tttl_sortation table every Sunday
+#          that are less than 60 days old
+#
 #Author:   Ahsan Ahmed
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#                                                                            #
+#Revision:
+#Date           Name            Description
+#--------------------------------------------------------------------------
+#
 #02/09/2012      Ahsan Ahmed      Created
-###################################################################################
+#01/10/2020      Rafael 	      Changed the execution user to cronmpr for security reasons
 
 #Usage Restrictions
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
@@ -41,11 +41,11 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 #Execute  tttl_sortation_weekly_maintenace
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -w300 <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -w300 <<EOF 2>&1
 use cpscan
-go   
+go
 execute tttl_sortation_maintenance
-go    
+go
 exit
 EOF
 `;

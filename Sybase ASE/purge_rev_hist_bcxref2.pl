@@ -29,7 +29,7 @@ $prodserver = hostname();
 
 print "***Initiating purge At:".localtime()."***\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver <<EOF
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF
 use rev_hist
 go
 exec qsp_bcxref2_delete_days 14

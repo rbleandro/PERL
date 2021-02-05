@@ -42,7 +42,7 @@ print "GL Extract StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 #Uploading data...
 if (-e "/opt/sap/bcp_data/mpr_data_lm/gl_extract/gl_groupings_lm.csv"){
 $bcp_msg = `. /opt/sap/SYBASE.sh
-bcp mpr_data_lm..gl_national_groups in /opt/sap/bcp_data/mpr_data_lm/gl_extract/gl_groupings_lm.csv -Usa -S$prodserver -P\`/opt/sap/cron_scripts/getpass.pl sa\` -c -t","  -r"\r\n" -b1`;
+bcp mpr_data_lm..gl_national_groups in /opt/sap/bcp_data/mpr_data_lm/gl_extract/gl_groupings_lm.csv -Ucronmpr -S$prodserver -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -c -t","  -r"\r\n" -b1`;
 }else{
  die "File not available yet, dying\n\n";
 }
@@ -63,7 +63,7 @@ die "Can't Continue\n\n";
 }
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -b -n<<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
 use mpr_data_lm
 go
 set clientapplname \'GL Groups Data Upload\'

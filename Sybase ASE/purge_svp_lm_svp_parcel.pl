@@ -30,7 +30,7 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 #Execute Purge svp_lm..svp_parcel
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
+isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
 use svp_lm
 go
 declare \@count int

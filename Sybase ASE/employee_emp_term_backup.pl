@@ -46,7 +46,7 @@ $empFile = "employee_$year-$mon-$mday.dat";
 $emp_termFile = "emp_term_$year-$mon-$mday.dat";
 
 $sqlError = `. /opt/sybase/SYBASE.sh
-bcp cpscan..employee out /opt/sybase/tmp/cpscan/$empFile -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$prodserver -c -t"|:|" -r"||\n"
-bcp cpscan..employee_terminal out /opt/sybase/tmp/cpscan/$emp_termFile -Usa -P\`/opt/sybase/cron_scripts/getpass.pl sa\` -S$prodserver -c -t"|:|" -r"||\n"
+bcp cpscan..employee out /opt/sybase/tmp/cpscan/$empFile -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -c -t"|:|" -r"||\n"
+bcp cpscan..employee_terminal out /opt/sybase/tmp/cpscan/$emp_termFile -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -c -t"|:|" -r"||\n"
 `;
 
