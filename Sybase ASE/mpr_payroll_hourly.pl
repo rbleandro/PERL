@@ -1,12 +1,5 @@
 #!/usr/bin/perl
 
-#Script: This script uploads gl data from solomon onto sybase for mpr purposes
-#
-#Date           Name            Description
-#-------------------------------------------------------------------------------
-#Mar 13,2019	Rafael Bahia       Originally created
-
-
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
 while (<PROD>){
 @prodline = split(/\t/, $_);
@@ -24,7 +17,6 @@ $currTime = localtime();
 $startHour=sprintf('%02d',((localtime())[2]));
 $startMin=sprintf('%02d',((localtime())[1]));
 my($day, $month, $year)=(localtime)[3,4,5];
-#print "$day-".($month+1)."-".($year+1900)."\n";
 $today=($year+1900)."-".($month+1)."-".$day;
 
 print "Test Mount Point...\n";
@@ -42,7 +34,7 @@ print "MPR Payroll StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 #Uploading data...
 if (-e "/opt/sap/bcp_data/MPR_Export_Hourly_Payroll_regex.csv"){
 $bcp_msg = `. /opt/sap/SYBASE.sh
-bcp mpr_data..mpr_hourly_union_time in /opt/sap/bcp_data/MPR_Export_Hourly_Payroll_regex.csv -Ucronmpr -S$prodserver -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -c -t"," --skiprows 2`;
+bcp_r mpr_data..mpr_hourly_union_time in /opt/sap/bcp_data/MPR_Export_Hourly_Payroll_regex.csv -V -S$prodserver -c -t"," --skiprows 2`;
 }else{
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
@@ -79,7 +71,7 @@ die "Can't Continue. BCP errors.\n\n";
 }
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use mpr_data
 go
 set clientapplname \'MPR_Export_Hourly_Payroll\'

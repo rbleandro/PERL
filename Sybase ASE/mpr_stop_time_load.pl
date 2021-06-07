@@ -1,12 +1,5 @@
 #!/usr/bin/perl -w
 
-
-#Author:    Amer Khan
-#Date          Name           Description
-#Apr 28 2008   Amer Khan 	   Originally created
-#Apr 30 2020   Rafael Bahia   Changed db conn to use cronmpr user to allow separate tempdb usage
-
-#Usage Restrictions
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
 while (<PROD>){
 @prodline = split(/\t/, $_);
@@ -35,7 +28,7 @@ while (1==1){
 }
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use mpr_data
 go
 execute mpr_stop_time_load

@@ -1,39 +1,31 @@
 #!/usr/bin/perl -w
 
-#####################################################################################
-#Script:   This script dumps a database and copies the dump file to standby server  #
-#                                                                            		#
-#Author:	Rafael Bahia												     		#
-#Revision:                                                                   		#
-#Date           Name            Description                                  		#
-#-----------------------------------------------------------------------------------#
-#Fev 13 2019		Rafael Bahia	Created					 				     		#
-#####################################################################################
-
-#Usage Restrictions
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
-$drserver = 'CPDB4';
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
-print "Prod: $prodserver....Dr: $drserver \n";
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
-$database = $ARGV[0];
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
+my $database = $ARGV[0];
+my $drserver = 'CPDB4';
 
 my $dba = $ARGV[1];
 if (defined $dba) {
     $mail=$dba;
 } else {
     $mail='CANPARDatabaseAdministratorsStaffList';
-} 
+}
 
 my $resumerep = $ARGV[2];
 if (defined $resumerep) {
@@ -42,29 +34,29 @@ if (defined $resumerep) {
     $resumerep=0;
 } 
 
-#Set starting variables
-$currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-$startMin=sprintf('%02d',((localtime())[1]));
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-$my_pid = getppid();
-$isProcessRunning =`ps -ef|grep sybase|grep dump_databases_to_dr.pl|grep -v grep|grep -v $my_pid|grep -v "vim dump_databases_to_dr.pl"|grep -v "less dump_databases_to_dr.pl"`;
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-#print "My pid: $my_pid\n";
-print "Running: $isProcessRunning \n";
-
-if ($isProcessRunning){
-die "\n Can not run, previous process is still running \n";
-
-}else{
-print "No Previous process is running, continuing\n";
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
 }
 
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
-
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use master
 go
 dump database $database to "/opt/sap/db_backups/$database.dmp" compression=100
@@ -88,6 +80,7 @@ die;
 }
 
 print "Now copying the dump file to $drserver\n";
+my $scpError;
 $scpError=`scp -p /opt/sap/db_backups/$database.dmp sybase\@$drserver:/opt/sap/db_backups`;
 print "$scpError\n";
 
@@ -107,6 +100,7 @@ die;
 }
 
 print "Now firing the load script at $drserver\n";
+my $load_msgs;
 $load_msgs = `ssh $drserver /opt/sap/cron_scripts/load_databases_to_dr.pl $database $mail $resumerep`;
 
 print "$load_msgs \n";

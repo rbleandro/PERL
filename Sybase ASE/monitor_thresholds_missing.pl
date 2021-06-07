@@ -1,50 +1,52 @@
 #!/usr/bin/perl
 
 #Script:   		This script monitors missing database thresholds
-#Author:   		Rafael Bahia
-#Date			Name			Description
-#May 22 2020	Rafael Bahia	Initial version
+#May 22 2020	Rafael Leandro	Initial version
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
-#Usage Restrictions
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
-my @prodline="";
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 my $tspace=1000;
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
+	'skipcheckprod|s=s' => \$skipcheckprod,
 	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help,
 	'threshold|t=i' => \$tspace
-) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --threshold|t 100000\n";
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod == 0){
-	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-	while (<PROD>){
-		@prodline = split(/\t/, $_);
-		$prodline[1] =~ s/\n//g;
-	}
-	close PROD;
-	if ($prodline[1] eq "0" ){
-		print "standby server \n";
-		die "This is a stand by server\n";
-	}
-}
-
-my $prodserver = hostname();
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
 if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
 
+$currTime = localtime();
+print "StartTime: $currTime\n";
+
 my $error = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -b<<EOF 2>&1
+isql_r -V -S$prodserver -w900 -b<<EOF 2>&1
 set nocount on
 set proc_return_status off
 go
@@ -75,19 +77,7 @@ exit
 EOF
 `;
 
-if($error =~ /Msg/)
-{
-print $error . "\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_ios script (get current blocks phase).
-$error
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-}
+send_alert($error,"no|not|Msg",$noalert,$mail,$0,"get missing thresholds");
 
 $error=~s/\t//g;
 
@@ -140,7 +130,7 @@ for (my $i=0; $i <= $#results; $i++){
 $htmlmail .= $htmltable . "</table>\n";
 
 my $error2 = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b -w400<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -w400<<EOF 2>&1
 set nocount on
 set proc_return_status off
 go
@@ -158,19 +148,7 @@ exit
 EOF
 `;
 
-if($error2 =~ /Msg/)
-{
-print $error2;
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_ios script(get execution plans phase).
-$error2
-EOF
-`;
-$finTime = localtime();
-print $finTime;
-die "Email sent";
-}
+send_alert($error2,"no|not|Msg",$noalert,$mail,$0,"");
 
 @results="";
 $htmltable="<br><table><th>dbname</th><th>segname</th><th>space_threshold_MB</th><th>recommendation</th><th>TotalDatabaseSpace</th><th>dataSize</th><th>logSize</th>\n";

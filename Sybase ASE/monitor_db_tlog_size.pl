@@ -1,56 +1,56 @@
 #!/usr/bin/perl
 
 #Script:   	This script checks the databases' log sizes and alerts in case they are above the threshold.
-#Author:   	Rafael Leandro
-#Revision:
-#Date			Name				Description
-#---------------------------------------------------------------------------------
 #Aug 18 2019	Rafael Leandro		Originally created
+#May  10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
-#Usage Restrictions
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
-my @prodline="";
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 my $tsize=25;
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
+	'skipcheckprod|s=s' => \$skipcheckprod,
 	'to|r=s' => \$mail,
-	'threshold|t=i' => \$tsize
-) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --threshold|t 10\n";
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'threshold|t=i' => \$tsize,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod == 0){
-	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-	while (<PROD>){
-		@prodline = split(/\t/, $_);
-		$prodline[1] =~ s/\n//g;
-	}
-	close PROD;
-	if ($prodline[1] eq "0" ){
-		print "standby server \n";
-		die "This is a stand by server\n";
-	}
-}
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-my $prodserver = hostname();
 if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
 
+$currTime = localtime();
+print "StartTime: $currTime\n";
+
 if ($tsize == -9) {
 	$tsize = 0.4;
 }
 
-
 my $error = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w1900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
+isql_r -V -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
 select db_name(d.dbid) as db_name,'#'
@@ -91,19 +91,7 @@ go
 EOF
 `;
 
-if($error =~ /Msg/)
-{
-print $error . "\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_dblog_size.pl script.
-$error
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-}
+&send_alert($error,"Msg",$noalert,$mail,$0,"get log size");
 
 $error =~ s/\t//g;
 
@@ -170,7 +158,7 @@ $htmlmail .= "<p>Following are the processes for the databases whose log are fil
 </p>\n";
 
 my $affdb = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
+isql_r -V -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
 select s.spid,'#',db_name(s.masterdbid),'#'
@@ -183,9 +171,9 @@ select s.spid,'#',db_name(s.masterdbid),'#'
 ,s.state as TranState,'#'
 ,'exec sp_showplan('+cast(p.spid as varchar(100))+')' as getPlan,'#'
 ,'dbcc sqltext('+cast(p.spid as varchar(100))+')' as getQuery
-from master..systransactions s 
-left join master..sysprocesses p on p.spid=s.spid 
-where 1=1  and db_name(p.dbid) in 
+from master..systransactions s
+left join master..sysprocesses p on p.spid=s.spid
+where 1=1  and db_name(p.dbid) in
 (
 	select db_name(d.dbid)
 	from master..sysdatabases d, master..sysusages u
@@ -215,19 +203,7 @@ go
 EOF
 `;
 
-if($affdb =~ /Msg/)
-{
-print $affdb . "\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_dblog_size.pl script.
-$affdb
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-}
+&send_alert($affdb,"Msg",$noalert,$mail,$0,"get open transactions");
 
 $htmlmail .= "<table >
 <th>spid</th><th>database</th><th>duration</th><th>status</th><th>physical_io</th><th>username</th><th>program</th><th>host</th><th>Tran State</th><th>getPlan</th><th>getQuery</th>\n";
@@ -253,7 +229,7 @@ $htmlmail .= $htmltable . "</table>\n";
 $htmlmail .= "<p>Following are the list of entries in the syslogshold table.</p>\n";
 
 my $logshold = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
+isql_r -V -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
 select s.spid,'###',db_name(s.dbid) as 'database','###',starttime,'###',datediff(mi,s.starttime,getdate()) as duration,'###',name,'###',isnull(sp.status,"orphan entry") as status
@@ -265,19 +241,7 @@ go
 EOF
 `;
 
-if($logshold =~ /Msg/)
-{
-print $logshold . "\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_dblog_size.pl script.
-$logshold
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-}
+&send_alert($logshold,"no|not|Msg",$noalert,$mail,$0,"exec sp_getRunningProcesses");
 
 $htmlmail .="<table >
 <th>spid</th><th>database</th><th>starttime</th><th>duration</th><th>name</th><th>status</th>\n";

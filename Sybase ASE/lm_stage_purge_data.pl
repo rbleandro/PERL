@@ -1,59 +1,54 @@
 #!/usr/bin/perl -w
 
 #Description:	Deletes old data from auxiliary tables in lm_stage database.
-#Author:    	Amer Khan
-#Revision:
-#Date           Name            Description
-#------------------------------------------------------------------------------------------------------
 #Jun 12	2013	Amer Khan 		Originally created
 #Sep 01	2019	Rafael Leandro	Modified to call a procedure to cleanup the ev_event table.
 #								The proc will cleanup the table in several small transactions to prevent locks in the database and reduce replication stress
 #Dec 17	2019	Rafael Leandro	Added deadlock retry logic 
 #								Added basic parameterization
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
-#Usage Restrictions
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
-my @prodline="";
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
-	'to|r=s' => \$mail
-) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --threshold|t 10\n";
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod == 0){
-	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-	while (<PROD>){
-		@prodline = split(/\t/, $_);
-		$prodline[1] =~ s/\n//g;
-	}
-	close PROD;
-	if ($prodline[1] eq "0" ){
-		print "standby server \n";
-		die "This is a stand by server\n";
-	}
-}
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-my $prodserver = hostname();
 if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
 
-#Set starting variables
-my $currTime = localtime();
-my $startHour=sprintf('%02d',((localtime())[2]));
-my $startMin=sprintf('%02d',((localtime())[1]));
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
-print "lm_stage_purge_data StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
-
-my $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+$sqlError = `. /opt/sap/SYBASE.sh
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use lm_stage
 go
 delete employee_login where scanner_drained_at < dateadd(dd,-40,getdate())
@@ -88,8 +83,8 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
+print $sqlError."\n";
 $currTime = localtime();
 
 if($sqlError =~ /Msg 1205/ && $sqlError =~ /Maxinum number of deadlock retries reached./){

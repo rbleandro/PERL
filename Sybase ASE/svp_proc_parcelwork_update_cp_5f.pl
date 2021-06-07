@@ -47,7 +47,7 @@ print "No Previous process is running, continuing\n";
 print "Start svp_parcel_del_eval_url_execution_cp: $currTime \n";
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_cp
 go
 declare \@now datetime
@@ -61,7 +61,7 @@ EOF
 `/opt/sap/cron_scripts/svp_parcel_del_eval_execution_cp.pl > /opt/sap/cron_scripts/cron_logs/svp_parcel_del_eval_execution_cp.log`;
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_cp
 go
 declare \@now datetime
@@ -76,7 +76,7 @@ EOF
 print "Start svp_parcel_exp_del_eval_url_execution_cp: $currTime \n";
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_cp
 go
 declare \@now datetime
@@ -90,7 +90,7 @@ EOF
 `/opt/sap/cron_scripts/svp_parcel_del_exp_eval_execution_cp.pl > /opt/sap/cron_scripts/cron_logs/svp_parcel_del_exp_eval_execution_cp.log`;
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_cp
 go
 declare \@now datetime
@@ -106,7 +106,7 @@ EOF
 #Execute source_of_failure in the end...
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_cp
 go
 declare \@now datetime
@@ -142,7 +142,7 @@ $currTime = localtime();
 print "Start svp_parcel_url_execution_cp: $currTime \n";
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_cp
 go
 declare \@now datetime
@@ -156,7 +156,7 @@ EOF
 system("/opt/sap/cron_scripts/svp_parcel_url_execution_cp.pl > /opt/sap/cron_scripts/cron_logs/svp_parcel_url_execution_cp.log 2>&1");
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_cp
 go
 declare \@now datetime
@@ -183,7 +183,7 @@ EOF
 }
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_cp
 go
 declare \@now datetime

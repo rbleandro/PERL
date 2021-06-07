@@ -1,16 +1,6 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#                                                                            #
-#Author:    Amer Khan							     #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#Jan 20 2014	Amer Khan 	Originally created                           #
-#                                                                            #
-##############################################################################
 
-#Usage Restrictions
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
 while (<PROD>){
 @prodline = split(/\t/, $_);
@@ -30,11 +20,8 @@ else
    $standbyserver = "CPDB2";
 }
 
-#Set inputs
-#Set starting variables
 $currTime = localtime();
 $startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
 $startMin=sprintf('%02d',((localtime())[1]));
 $startMonth=sprintf('%02d',((localtime())[4]));
 $startDay=sprintf('%02d',((localtime())[3]));
@@ -43,14 +30,10 @@ $startYear=sprintf('%02d',((localtime())[5]));
 $startMonth += 1; #Month in perl starts from 0 and ends on 11.
 $startYear += 1900; #Needed to get correct 4digit year.
 
-$today = "$startMonth/$startDay/$startYear";
-
 print "mpr_lm_route_proc For Loomis StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
-#if (1==2){
 $my_pid = getppid();
 $isProcessRunning =`ps -ef|grep sybase|grep mpr_lm_route_proc.pl|grep -v grep|grep -v $my_pid|grep -v "vim mpr_lm_route_proc.pl"|grep -v "less mpr_lm_route_proc.pl"`;
 
-#print "My pid: $my_pid\n";
 print "Running: $isProcessRunning \n";
 
 if ($isProcessRunning){
@@ -73,7 +56,7 @@ while (1==1){
 $currTime = localtime();
 print "\nAll flags are set running proc now $currTime\n\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use mpr_data_lm
 go
 execute mpr_route_proc

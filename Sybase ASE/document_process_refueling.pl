@@ -1,54 +1,46 @@
 #!/usr/bin/perl -w
 
-#Usage Restrictions
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
-my @prodline="";
+
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
 GetOptions(
-    'to|r=s' => \$mail
-) or die "Usage: $0 --to|r rleandro\n";
+    'skipcheckprod|s=s' => \$skipcheckprod,
+    'to|r=s' => \$mail,
+    'dbserver|ds=s' => \$prodserver,
+    'skipcheckprocess|p=i' => \$checkProcessRunning,
+    'noalert' => \$noalert,
+    'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-my $prodserver = hostname();
-
-
-#Set starting variables
-my $currTime = localtime();
-my $startHour=sprintf('%02d',((localtime())[2]));
-my $startMin=sprintf('%02d',((localtime())[1]));
-
-my $my_pid = getppid();
-my $isProcessRunning =`ps -ef|grep sybase|grep document_process_refueling.pl|grep -v grep|grep -v $my_pid|grep -v "vim document_process_refueling.pl"|grep -v "less document_process_refueling.pl"`;
-
-#print "My pid: $my_pid\n";
-print "Running: $isProcessRunning \n";
-
-if ($isProcessRunning){
-die "\n Can not run, previous process is still running \n";
-
-}else{
-print "No Previous process is running, continuing\n";
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
 }
 
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
-my $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
+$sqlError = `. /opt/sap/SYBASE.sh
+isql_r -V -S$prodserver <<EOF 2>&1
 use hub_db
 go
 exec document_process_refueling
@@ -57,20 +49,7 @@ exit
 EOF
 `;
 
-print "Any message from the proc execution...\n $sqlError \n";
+send_alert($sqlError,"no|not|Msg",$noalert,$mail,$0,"exec proc");
 
-if ($sqlError =~ /Msg/ || $sqlError =~ /no|not/ || $sqlError =~ /error/i){
-print $sqlError."\n";
-
-$finTime = localtime();
-
-`/usr/sbin/sendmail -t -i <<EOF
-To:$mail\@canpar.com
-Subject: Error: document_process_refueling at $finTime
-
-$sqlError
-
-EOF
-`;
-}
-
+$currTime = localtime();
+print "Process FinTime: $currTime\n";

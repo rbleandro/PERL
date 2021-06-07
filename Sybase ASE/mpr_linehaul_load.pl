@@ -1,16 +1,5 @@
 #!/usr/bin/perl 
 
-###################################################################################
-#Script:   This script uploads linehaul data onto sybase for mpr purposes         #
-#                                                                                 #
-#Author:   Amer Khan                                                              #
-#Revision:                                                                        #
-#Date           Name            Description                                       #
-#---------------------------------------------------------------------------------#
-#Oct 07,11	Amer Khan       Originally created                                #
-#                                                                                 #
-#                                                                                 #
-###################################################################################
 
 open (PROD, "</opt/sybase/cron_scripts/passwords/check_prod");
 while (<PROD>){
@@ -24,17 +13,13 @@ print "standby server \n";
 use Sys::Hostname;
 $prodserver = hostname();
 
-#########################
 # Process Check
-#########################
+
 $isProcessRunning =`ps -ef|grep sybase|grep mpr|grep _linehaul|grep _load|awk \'{ print \$3 }\'`;
 @pid_array = split(/\n/,$isProcessRunning);
-#print "@pid_array\n";
 $my_pid = getppid();
-#print "My pid: $my_pid\n";
 
 foreach(@pid_array){ 
-#print "Checking pid: $_\n";
 
    if ($_ != $my_pid)
       {
@@ -44,10 +29,8 @@ foreach(@pid_array){
 }
 
 #Setting Time
-$currDate=localtime();
 $currTime = localtime();
 $startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
 $startMin=sprintf('%02d',((localtime())[1]));
 
 print "Test Mount Point...\n";
@@ -71,11 +54,10 @@ print "Period Running for: $period[1] \n";
 
 print "Linehaul Load StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
-
 #Uploading data...
 if (-e "/opt/sybase/bcp_data/mpr_data/gl_extract/linehaul_data.$period[1]"){ 
 $bcp_msg = `. /opt/sybase/SYBASE.sh
-bcp mpr_data..linehaul_bcp in /opt/sybase/bcp_data/mpr_data/gl_extract/linehaul_data.$period[1] -Ucronmpr -S$prodserver -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -c -t"," -F2 -r"\r\n" -b1000`;
+bcp_r mpr_data..linehaul_bcp in /opt/sybase/bcp_data/mpr_data/gl_extract/linehaul_data.$period[1] -V -S$prodserver -c -t"," -F2 -r"\r\n" -b1000`;
 }else{
  die "File not available yet: linehaul_data.$period[1] , dying\n\n";
 }
@@ -96,7 +78,7 @@ die "Can't Continue\n\n";
 }
 
 $sqlError = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use mpr_data
 go
 set clientapplname \'Linehaul Data Upload\'     

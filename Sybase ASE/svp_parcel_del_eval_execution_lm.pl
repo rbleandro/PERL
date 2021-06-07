@@ -1,49 +1,58 @@
 #!/usr/bin/perl 
 
-###################################################################################
-#Script:   This script executes a URL web based program remotely on cpmycanpar    #
-#                                                                                 #
-#Author:   Amer Khan                                                              #
-#Revision:                                                                        #
-#Date           Name            Description                                       #
-#---------------------------------------------------------------------------------#
-#Jul 15,11	Ahsan Ahmed       Originally created                                #
-#                                                                                 #
-#                                                                                 #
-###################################################################################
-
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-#        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+use lib ('/opt/sap/cron_scripts/lib');
+use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
-#Setting Time
-$currDate=localtime();
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
+my $monitorOutput;
+
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
+
+showDefaultHelp($help,$0);
+isProd($skipcheckprod);
+
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
 $currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
+print "StartTime: $currTime\n";
 
-($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-
+my $currDate=localtime();
+$currTime = localtime();
+my $startHour=sprintf('%02d',((localtime())[2]));
+my $startMin=sprintf('%02d',((localtime())[1]));
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 $year += 1900;
 $mon += 1;
-
 $mon=sprintf('%02d',$mon);
 $mday=sprintf('%02d',$mday);
 $min=sprintf('%02d',$min);
 $hour=sprintf('%02d',$hour);
 $sec=sprintf('%02d',$sec);
 
-$date_flag = "$mon-$mday-$year $hour:$min:$sec";
-#$date_flag = '02/21/2012 12:48:53 AM';
+my $date_flag = "$mon-$mday-$year $hour:$min:$sec";
 print "Date to check from : $date_flag \n";
 
 #*******************************

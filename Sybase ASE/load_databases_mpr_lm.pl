@@ -37,7 +37,7 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use master
 go
 load database mpr_data_lm from "/opt/sap/db_backups/mpr_data_lm.dmp" 

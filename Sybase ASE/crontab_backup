@@ -46,6 +46,7 @@
 00 04 * * * /opt/sap/cron_scripts/purge_cpscan_tttl_batchdown.pl > /opt/sap/cron_scripts/cron_logs/purge_cpscan_tttl_batchdown.log 2>&1
 00 03 * * * /opt/sap/cron_scripts/purge_rev_hist_bcxref2.pl > /opt/sap/cron_scripts/cron_logs/purge_rev_hist_bcxref2.log 2>&1
 00 04 * * * /opt/sap/cron_scripts/purge_cmf_data_lm_purge_pr_waybills_log.pl > /opt/sap/cron_scripts/cron_logs/purge_cmf_data_lm_purge_pr_waybills_log.log 2>&1
+00 04 * * * /opt/sap/cron_scripts/purge_tttl_ev_event_hospital.pl > /opt/sap/cron_scripts/cron_logs/purge_tttl_ev_event_hospital.log 2>&1
 ##
 ############################################################ START OF MONITORING JOBS ############################################################
 00 00 * * * /opt/sap/cron_scripts/monitor_thresholds_missing.pl > /opt/sap/cron_scripts/cron_logs/monitor_thresholds_missing.log 2>&1
@@ -53,7 +54,7 @@
 00,30 * * * * /opt/sap/cron_scripts/monitor_sybase.pl > /opt/sap/cron_scripts/cron_logs/monitor_sybase.log 2>&1
 */5 * * * * /opt/sap/cron_scripts/monitor_blocks.pl > /opt/sap/cron_scripts/cron_logs/monitor_blocks.log 2>&1
 */10 * * * * /opt/sap/cron_scripts/monitor_ios.pl > /opt/sap/cron_scripts/cron_logs/monitor_ios.log 2>&1
-*/5 * * * * /opt/sap/cron_scripts/monitor_server.pl -t 90 > /opt/sap/cron_scripts/cron_logs/monitor_server.log 2>&1
+*/5 * * * * /opt/sap/cron_scripts/monitor_server.pl > /opt/sap/cron_scripts/cron_logs/monitor_server.log 2>&1
 00 09 * * * /opt/sap/cron_scripts/monitor_cronjobs.pl crontab > /opt/sap/cron_scripts/cron_logs/monitor_cronjobs.log 2>&1
 */5 * * * * /opt/sap/cron_scripts/monitor_memory_usage.pl > /opt/sap/cron_scripts/cron_logs/monitor_memory_usage.log 2>&1
 */30 07-23 * * * /opt/sap/cron_scripts/monitor_long_running_transactions.pl > /opt/sap/cron_scripts/cron_logs/monitor_long_running_transactions.log 2>&1
@@ -64,6 +65,7 @@
 */30 07-23 * * 1-5 /opt/sap/cron_scripts/monitor_long_running_sessions.pl > /opt/sap/cron_scripts/cron_logs/monitor_long_running_sessions.log 2>&1
 */30 * * * * /opt/sap/cron_scripts/monitor_heavy_queries.pl > /opt/sap/cron_scripts/cron_logs/monitor_heavy_queries.log 2>&1
 00 09 * * 0 /opt/sap/cron_scripts/server_health_report.pl > /opt/sap/cron_scripts/cron_logs/server_health_report.log 2>&1
+##* * * * * /opt/sap/cron_scripts/monitor_uss_connections.pl > /opt/sap/cron_scripts/cron_logs/monitor_uss_connections.log 2>&1
 ###Monitor hub_db rows pending processing
 */15 06-22 * * * /opt/sap/cron_scripts/monitor_hubdb_pending_rows.pl > /opt/sap/cron_scripts/cron_logs/monitor_hubdb_pending_rows.log 2>&1
 ############################################################ END OF MONITORING JOBS ############################################################
@@ -112,12 +114,10 @@
 #
 55 23 * * * /opt/sap/cron_scripts/AddCorrExpiredUpdate.pl > /opt/sap/cron_scripts/cron_logs/AddCorrExpiredUpdate.log 2>&1
 ##
-00 00 * * 0 /opt/sap/cron_scripts/cmf_security_list_refresh.pl > /opt/sap/cron_scripts/cron_logs/cmf_security_list_refresh.log 2>&1
+00 00 * * * /opt/sap/cron_scripts/cmf_security_list_refresh.pl > /opt/sap/cron_scripts/cron_logs/cmf_security_list_refresh.log 2>&1
 ##
-00 00 * * 0 /opt/sap/cron_scripts/cmf_security_list_refresh_lm.pl /opt/sap/cron_scripts/cron_logs/cmf_security_list_refresh_lm.log 2>&1
+00 00 * * * /opt/sap/cron_scripts/cmf_security_list_refresh_lm.pl /opt/sap/cron_scripts/cron_logs/cmf_security_list_refresh_lm.log 2>&1
 ##
-00 04 * * * /opt/sap/cron_scripts/add_new_customers_to_pr_tables.pl > /opt/sap/cron_scripts/cron_logs/add_new_customers_to_pr_tables.log 2>&1
-#
 00 * * * * /opt/sap/cron_scripts/copy_h_barcode_scans_from_lmscan.pl > /opt/sap/cron_scripts/cron_logs/copy_h_barcode_scans_from_lmscan.log 2>&1
 55 * * * * /opt/sap/cron_scripts/mobitrax_transfer_pieces_ino.pl > /opt/sap/cron_scripts/cron_logs/mobitrax_transfer_pieces_ino.log 2>&1
 #
@@ -243,8 +243,9 @@
 ##
 */5 * * * * /opt/sap/cron_scripts/document_process_refueling.pl > /opt/sap/cron_scripts/cron_logs/document_process_refueling.log 2>&1
 ##
+###Load the COSDataCapture rows from tttl_dr_delivery_record rows inserted before a package was manifested
+16 19 * * * /opt/sap/cron_scripts/COSDataCapture_from_delivery_record.pl > /opt/sap/cron_scripts/cron_logs/COSDataCapture_from_delivery_record.log 2>&1
 ######################################Following is the misc jobs area that runs infrequently#####################################
 00 17 * * * /opt/sap/cron_scripts/record_table_growth.pl > /opt/sap/cron_scripts/cron_logs/record_table_growth.log 2>&1
 ##* * * * * /opt/sap/cron_scripts/removeCommvaultLogFiles.sh > /opt/sap/cron_scripts/cron_logs/removeCommvaultLogFiles.log 2>&1
-00 13 24 12 * /opt/sap/cron_scripts/backup_cod_tables_december.pl > /opt/sap/cron_scripts/cron_logs/backup_cod_tables_december.log 2>&1
-00 01 02 01 * /opt/sap/cron_scripts/backup_cod_tables_january.pl > /opt/sap/cron_scripts/cron_logs/backup_cod_tables_january.log 2>&1
+##00 20 20 01 * /opt/sap/cron_scripts/dump_databases_to_test.pl --originDB cmf_data --destDB cmf_data --skipcheckprod 0 --to rleandro --loadoption 1 > /opt/sap/cron_scripts/cron_logs/dump_load.log 2>&1

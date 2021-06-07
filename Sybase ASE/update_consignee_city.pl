@@ -1,52 +1,46 @@
 #!/usr/bin/perl -w
 
-###################################################################################
-#Script:   This script updates consignee_city in tttl_dr_delivery_record from     #
-#          all_minor_cities in canda_post db based on the consignee_postal_code   #
-#                                                                                 #
-#Author:   Amer Khan                                                              #
-#Revision:                                                                        #
-#Date		Name		Description                                       #
-#---------------------------------------------------------------------------------#
-#09/13/04	Amer Khan	Originally created                                #
-#                                                                                 #
-#11/01/07      Ahsan Ahmed      Modified
-###################################################################################
-
-#Usage Restrictions
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
-if ($prodserver eq "CPDB2" ) {
-    $standbyserver = "CPDB1";
-}
-else
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+use lib ('/opt/sap/cron_scripts/lib');
+use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
+
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
+
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
+
+if ($prodserver =~ /cpsybtest/)
 {
-   $standbyserver = "CPDB2";
+$prodserver = "CPSYBTEST";
 }
 
-#Usage Restrictions
-   print "Usage:update_consignee_city.pl\n";
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
-#Initialize vars
-$database = "cpscan";
-
-#Execute update now
-
-print "\n###Running update on Database:$database from Server:$prodserver on Host:".`hostname`."###\n";
-
-
-print "***Initiating update At:".localtime()."***\n";
-$error = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
+$sqlError = `. /opt/sap/SYBASE.sh
+isql_r -V -S$prodserver <<EOF 2>&1
 use cpscan
 go
 execute update_consignee_city
@@ -69,17 +63,8 @@ go
 exit
 EOF
 `;
-print "$error\n";
 
-   if ($error =~ /not/){
-      print "Messages From Update of consignee_city Process...\n";
-      print "$error\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Update consignee_city in tttl_dr_delivery_record
+send_alert($sqlError,"Msg|not",$noalert,$mail,$0,"exec proc");
 
-$error
-EOF
-`;
-   }#end of if messages received
-
+$currTime = localtime();
+print "Process FinTime: $currTime\n";

@@ -61,7 +61,7 @@ print "No Previous process is running, continuing\n";
 #########################################
 #if (1==2) { #Conditional skip to avoid the following until the End OF If . See }
 $sqlDateCheck = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 set nocount on
@@ -80,7 +80,7 @@ if ($sqlDateCheck < 2){
 }#else{ print "Need to run update\n"; die; }
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 set clientapplname \'svp_proc_parcel_update--Step 1\'     
@@ -112,7 +112,7 @@ EOF
 ## To handle the holidays. Use dateadd(dd,2,max... to capture the holidays
 #
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 set clientapplname \'svp_proc_parcel_update--Step 1\'
@@ -179,7 +179,7 @@ $startMin=sprintf('%02d',((localtime())[1]));
 print "svp_proc_parcel StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 set clientapplname \'svp_proc_parcel_update--Step 2\'    

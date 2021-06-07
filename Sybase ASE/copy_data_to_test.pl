@@ -2,11 +2,6 @@
 
 ##########################################################################################################################################################
 #Script:   This script copies data from production to cpsybtest using the bcp component
-#
-#Author:	Rafael Leandro
-#Revision:
-#Date           Name            Description
-#----------------------------------------------------------------------------
 #Oct 24 2018	Rafael Leandro	Created
 #Aug 09 2019	Rafael Leandro	1.Added parameters to control the script behavior (check the usage guidelines below). 
 #								2.Added mail recipient parameter.
@@ -28,6 +23,7 @@ my $table = "";
 my $action = "";
 my @prodline="";
 my $scpError="";
+my $checkProcessRunning=1;
 
 GetOptions(
     'skipcheckprod|s=s' => \$skipcheckprod,
@@ -44,18 +40,8 @@ if ($database eq "" || $table eq "" || $action eq "" ){
    die "Script Executed With Wrong Number Of Arguments\n";
 }
 
-if ($skipcheckprod == 0){
-	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-	while (<PROD>){
-		@prodline = split(/\t/, $_);
-		$prodline[1] =~ s/\n//g;
-	}
-	close PROD;
-	if ($prodline[1] eq "0" ){
-		print "standby server \n";
-		die "This is a stand by server\n";
-	}
-}
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
 my $prodserver = hostname();
 if ($prodserver =~ /cpsybtest/)
@@ -67,15 +53,12 @@ my $testserver = '10.3.1.165';
 
 #Set starting variables
 my $currTime = localtime();
-my $startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-my $startMin=sprintf('%02d',((localtime())[1]));
 
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "CurrTime: $currTime\n";
 
-`find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
+#`find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
 
-my $bcpError=`/opt/sap/OCS-16_0/bin/bcp $database..$table out /opt/sap/db_backups/$database\_$table.dat -n -S CPDB1 -U cronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\``;
+my $bcpError=`/opt/sap/OCS-16_0/bin/bcp_r $database..$table out /opt/sap/db_backups/$database\_$table.dat -n -S CPDB1 -V`; 
 
 if ($bcpError =~ /Error/ || $bcpError =~ /Msg/){
 print $bcpError."\n";

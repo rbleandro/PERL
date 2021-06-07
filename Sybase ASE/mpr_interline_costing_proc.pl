@@ -1,15 +1,5 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#                                                                            #
-#Author:    Amer Khan							     #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#Apr 28 2008	Amer Khan 	Originally created                           #
-#                                                                            #
-##############################################################################
-
 #Usage Restrictions
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
 while (<PROD>){
@@ -25,11 +15,8 @@ $prodserver = hostname();
 
 #Set starting variables
 $currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
 
-print "mpr_interline_costing_proc StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "mpr_interline_costing_proc StartTime: $currTime\n";
 
 while (1==0){
    unless (-e "/tmp/mpr_route_proc_done" && -e "/tmp/hmi_jcc_load_done" && -e "/tmp/hmi_mtl_load_done"){ 
@@ -40,7 +27,7 @@ while (1==0){
 }
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use mpr_data
 go
 execute mpr_interline_costing_proc

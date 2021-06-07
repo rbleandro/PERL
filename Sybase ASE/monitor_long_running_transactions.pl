@@ -1,51 +1,52 @@
 #!/usr/bin/perl
 
 #Script:   	This script checks for long running transactions that are preventing database log flush
-#Author:   	Rafael Leandro
-#Revision:
-#Date			Name				Description
-#---------------------------------------------------------------------------------
 #Aug 18 2019	Rafael Leandro		Originally created
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
-#Usage Restrictions
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
-my @prodline="";
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 my $tduration=30;
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
+	'skipcheckprod|s=s' => \$skipcheckprod,
 	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help,
 	'threshold|t=i' => \$tduration
-) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --threshold|t 10\n";
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod == 0){
-	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-	while (<PROD>){
-		@prodline = split(/\t/, $_);
-		$prodline[1] =~ s/\n//g;
-	}
-	close PROD;
-	if ($prodline[1] eq "0" ){
-		print "standby server \n";
-		die "This is a stand by server\n";
-	}
-}
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-my $prodserver = hostname();
 if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
 
+$currTime = localtime();
+print "StartTime: $currTime\n";
+
 my $error = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
+isql_r -V -w900 -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
 select s.spid,'#',db_name(s.dbid) as 'database','#',isnull(sp.spid,-9765) as process,'#',s.starttime,'#',datediff(mi,s.starttime,getdate()) as duration,'#'
@@ -65,19 +66,9 @@ go
 EOF
 `;
 
-if($error =~ /Msg/)
-{
-print $error . "\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_long_running_transactions.pl script.
-$error
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-}
+
+send_alert($error,"no|not|Msg",$noalert,$mail,$0,"exec proc");
+
 
 $error =~ s/\t//g;
 
@@ -116,7 +107,7 @@ $htmlmail .= $htmltable . "</table>\n";
 if ($spid == 0) {die "Could not find spid\n";}
 
 my $error2 = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b -w400<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -w400<<EOF 2>&1
 set nocount on
 set proc_return_status off
 go
@@ -130,23 +121,11 @@ exit
 EOF
 `;
 
-if($error2 =~ /Msg/)
-{
-print $error2;
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_ios script(get execution plans phase).
-$error2
-EOF
-`;
-$finTime = localtime();
-print $finTime;
-die "Email sent";
-}
-
 $error2 =~ s/DBCC execution completed.*//g;
 $error2 =~ s/Subordinate SQL Text: //g;
 $error2 =~ s/SQL Text:.*//g;
+
+#send_alert($error2,"no|not|Msg",$noalert,$mail,$0,"exec proc");
 
 if ($error2 !~ /Possibly the query has not started or has finished executing/ && $error !~ /-9765/){
 if ($error =~ /-9765/){

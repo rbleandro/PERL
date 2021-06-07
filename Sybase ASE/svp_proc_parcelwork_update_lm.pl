@@ -3,7 +3,7 @@
 #Description: This script runs the proc parcelwork procedures
 #Dec 16 2013	Amer Khan       Modified for Canpar
 #Apr 20 2019 Rafael Leandro  Added process profiling
-#Jun 05 2020 Rafael Leandro  Changed the isql user to the cronmpr user so that the tempdb_mpr database is used
+#Jun 05 2020 Rafael Leandro  Changed the isql_r user to the cronmpr user so that the tempdb_mpr database is used
 
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
 while (<PROD>){
@@ -51,7 +51,7 @@ print "No Previous process is running, continuing\n";
 #########################################
 #if (1==2) { #Conditional skip to avoid the following until the End OF If . See }
 $sqlDateCheck = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 set nocount on
@@ -70,7 +70,7 @@ if ($sqlDateCheck < 2){
 }#else{ print "Need to run update\n"; die; }
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 set clientapplname \'Loomis_svp_proc_parcel_update--Step 1\'
@@ -121,7 +121,7 @@ if($sqlError =~ /Msg/ && $sqlError !~ /2601/ ){
       print "Errors may have occurred during update...\n\n";
 
 $sqlError1 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 set clientapplname \'Rollbacking - Loomis_svp_proc_parcel_update--Step 1\'
@@ -168,7 +168,7 @@ EOF
  ## To handle the holidays. Use dateadd(dd,2,max... to capture the holidays
  #
  $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 set clientapplname \'svp_proc_parcel_update--Step 1\'
@@ -234,7 +234,7 @@ if($sqlError =~ /Msg/ && $sqlError !~ /2601/ ){
       print "Errors may have occurred during update...\n\n";
 
 $sqlError1 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 set clientapplname \'Rollbacking - Loomis_svp_proc_parcel_update--Step 1\'
@@ -277,7 +277,7 @@ $currTime = localtime();
 print "Start svp_parcel_url_execution_lm: $currTime \n";
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 declare \@now datetime
@@ -299,7 +299,7 @@ EOF
 `/opt/sap/cron_scripts/svp_parcel_url_execution_lm.pl > /opt/sap/cron_scripts/cron_logs/svp_parcel_url_execution_lm.log`;
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 declare \@now datetime
@@ -313,7 +313,7 @@ EOF
 print "Start svp_parcel_url_execution_lm: $currTime \n";
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 declare \@now datetime
@@ -327,7 +327,7 @@ EOF
 `/opt/sap/cron_scripts/svp_parcel_del_eval_execution_lm.pl > /opt/sap/cron_scripts/cron_logs/svp_parcel_del_eval_execution_lm.log`;
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 declare \@now datetime
@@ -342,7 +342,7 @@ EOF
 
 #Execute source_of_failure in the end...
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 declare \@now datetime
@@ -389,7 +389,7 @@ $currTime = localtime();
 print "Start svp_parcel_url_execution_lm: $currTime \n";
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 declare \@now datetime
@@ -403,7 +403,7 @@ EOF
 `/opt/sap/cron_scripts/svp_parcel_url_execution_lm.pl > /opt/sap/cron_scripts/cron_logs/svp_parcel_url_execution_lm.log`;
 
 $sqlError2 = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 declare \@now datetime
@@ -416,7 +416,7 @@ EOF
 
 #Execute feeding stats in the end...
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use svp_lm
 go
 declare \@now datetime

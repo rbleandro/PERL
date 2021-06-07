@@ -4,28 +4,39 @@
 #          are reached. This script is executed from within threshold stored
 #          procedure and should not be used individually.
 #
-#Author:   Amer Khan
-#Revision:
-#Date           Name            Description
-#---------------------------------------------------------------------------------
 #08/27/04       Amer Khan       Originally created
-#Mar 30 2019	Rafael Bahia	Changed the script to automatically add extra space as a precaution
-#Apr 03 2019	Rafael Bahia	Implemented better error handling and mail messaging
-#May 15 2019	Rafael Bahia	Changed the mail client to sendmail for faster mailing. Changed the script so it can run properly on secondary servers to report low space and add more space when necessary.
-#May 15 2019	Rafael Bahia	Now the script will send an email if the script is invoked with the wrong parameter order.
-#May 15 2019	Rafael Bahia	Now the script is taking into consideration all available temporary databases existing on the server (named with the tempdb* prefix) and not only tempdb.
-#May 29 2019	Rafael Bahia	Final message regarding the automatic database expansion now differentiates between production and secondary servers.
+#Mar 30 2019	Rafael Leandro	Changed the script to automatically add extra space as a precaution
+#Apr 03 2019	Rafael Leandro	Implemented better error handling and mail messaging
+#May 15 2019	Rafael Leandro	Changed the mail client to sendmail for faster mailing. Changed the script so it can run properly on secondary servers to report low space and add more space when necessary.
+#May 15 2019	Rafael Leandro	Now the script will send an email if the script is invoked with the wrong parameter order.
+#May 15 2019	Rafael Leandro	Now the script is taking into consideration all available temporary databases existing on the server (named with the tempdb* prefix) and not only tempdb.
+#May 29 2019	Rafael Leandro	Final message regarding the automatic database expansion now differentiates between production and secondary servers.
+#May 26 2021	Rafael Leandro	Formatted html message. Added best practices compliance (strict,warnings)
 
-#Usage Restrictions
-#print $#ARGV;
+use strict;
+use warnings;
+
+my $prodserver="";
+my $dbname="";
+my $segname="";
+my $space_left="";
+my $spacetoadd="";
+my $finTime=localtime();
+my $sqlError="";
+my $scriptname = $0;
+my $log = $scriptname;
+$log =~ s/(\w+).pl$/cron_logs\/$1.log/g;
+
 if ($#ARGV != 2){
 print "Usage: pageNow.pl cpscan image_seg 256000 \n";
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: ERROR on script pageNow.pl. Check as soon as possible!!
+Content-Type: text/html
+MIME-Version: 1.0
 
-The script didn't receive the proper parameters in the right order. Check the threshold procedures on Sybase and match the parameters. The script is located is /opt/sap/cron_scripts/pageNow.pl.
+The script didn't receive the proper parameters in the right order. Check the threshold procedures on Sybase and match the parameters. The script is located is /opt/sap/cron_scripts/pageNow.pl.</br></br>
 EOF
 `;
 die;
@@ -38,17 +49,6 @@ if ($prodserver =~ /cpsybtest2/){
 $prodserver='CPSYBTEST';
 }
 
-#open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-#while (<PROD>){
-#@prodline = split(/\t/, $_);
-#$prodline[1] =~ s/\n//g;
-#}
-#if ($prodline[1] eq "0" ){
-#print "standby server \n";
-#die "This is a stand by server\n";
-#}
-
-#Saving argument
 $dbname = $ARGV[0];
 $segname = $ARGV[1];
 $space_left = $ARGV[2];
@@ -59,35 +59,30 @@ $spacetoadd = 1000;
 $spacetoadd = 5000;
 }
 
-#Setting Time range to scan
-$currDate=((localtime())[5]+1900)."/".sprintf('%02d',((localtime())[4]+1))."/".sprintf('%02d',((localtime())[3]));
-$currHour=sprintf('%02d',((localtime())[2]));
-$currMin =sprintf('%02d',((localtime())[1]-1)); #Subtract one to check the past minute
-
 #Convert to MB
 $space_left = ($space_left/512);
-#print $space_left;
-
-#CANPARDatabaseAdministratorsStaffList
 
 if ($dbname =~ /tempdb/){
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: Segment: $segname in Database: $dbname may be FULL!!!
+Content-Type: text/html
+MIME-Version: 1.0
 
-Only $space_left MB left
+Only $space_left MB left</br></br>
 
-Please contact DBAs for support.
+Please contact DBAs for support.</br></br>
 
-Dated: $currDate\--$currHour\:$currMin
+Dated: $finTime</br></br>
+<p>Script path: perl $scriptname</p><p>Script log path: cat $log</p>
 EOF
 `;
 
 }
 else{
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use master
 go
 exec sp_add_database_space $dbname,"$segname",$spacetoadd
@@ -96,52 +91,65 @@ exit
 EOF
 `;
 
-if ($sqlError =~ /Msg/){
+
+if ($sqlError =~ /Msg/ || $sqlError =~ /error/){
 print $sqlError."\n";
+$sqlError =~ s/\n/<\/br>/g;
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: Segment: $segname in Database: $dbname may be FULL!!!
+Content-Type: text/html
+MIME-Version: 1.0
 
-Only $space_left MB left. Attempting to add 5GB of extra space automatically failed. See the error below.
+Only $space_left MB left. Attempting to add 5GB of extra space automatically failed. See the error below.</br></br>
 
 $sqlError
 
-Dated: $currDate\--$currHour\:$currMin
+Dated: $finTime</br></br>
+<p>Script path: perl $scriptname</p><p>Script log path: cat $log</p>
 EOF
 `;
 }
 else{
 if ($sqlError =~ /no space left to add/){
 print $sqlError."\n";
+$sqlError =~ s/\n/<\/br>/g;
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: Segment: $segname in Database: $dbname may be FULL!!!
+Content-Type: text/html
+MIME-Version: 1.0
 
-Only $space_left MB left
+Only $space_left MB left</br></br>
 
-The space for this segment on this secondary server is already synchronized with production. Please check what might have triggered the segment growth.
+The space for this segment on this secondary server is already synchronized with production. Please check what might have triggered the segment growth.</br></br>
 
-Dated: $currDate\--$currHour\:$currMin
+Dated: $finTime</br></br>
+<p>Script path: perl $scriptname</p><p>Script log path: cat $log</p>
 EOF
 `;
 }else{
 print $sqlError."\n";
+$sqlError =~ s/\n/<\/br>/g;
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: Segment: $segname in Database: $dbname may be FULL!!!
+Content-Type: text/html
+MIME-Version: 1.0
 
-Only $space_left MB left. 
+Only $space_left MB left. </br></br>
 
-If this is production, 5 GB were added automatically as a precaution (see output below). You should still check if any additional action is necessary. Remember to also add space on the standby and dr servers accordingly.
+If this is production, 5 GB were added automatically as a precaution (see output below). You should still check if any additional action is necessary. Remember to also add space on the standby and dr servers accordingly.</br></br>
 
-If this is a secondary server, the database size was synchronized automatically using the production's database size as reference (see output below). If the attempt to synchronize the space failed, check the procedure master..sp_add_database_space and see what is missing (use the log below as a reference).
+If this is a secondary server, the database size was synchronized automatically using the production's database size as reference (see output below). If the attempt to synchronize the space failed, check the procedure master..sp_add_database_space and see what is missing (use the log below as a reference).</br></br>
 
 $sqlError
 
-Dated: $currDate\--$currHour\:$currMin
+Dated: $finTime</br></br>
+<p>Script path: perl $scriptname</p><p>Script log path: cat $log</p>
 EOF
 `;
 }

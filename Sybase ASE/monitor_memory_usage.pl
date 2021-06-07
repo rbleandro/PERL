@@ -1,76 +1,68 @@
 #!/usr/bin/perl
 
-#Script:   	This script monitors process memory usage. Anything above the baseline generates an alert
-#Author:   	Rafael Bahia
-#Revision:
-#Date			Name			Description
-#---------------------------------------------------------------------------------
+#Script:   		This script monitors process memory usage. Anything above the baseline generates an alert
 #Jun 18 2019	Rafael Bahia	Originally created
-#Jul 5 2019	Rafael Bahia	Removed day execution restrictions
+#Jul 5 2019		Rafael Bahia	Removed day execution restrictions
 #May 4 2020     Rafael Bahia    Alert will now include culprit sessions. Script is now parameterized.
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
-my @prodline="";
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 my $tmem=6000;
 my $tmemtotal=300000;
-my $error="";
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
+	'skipcheckprod|s=s' => \$skipcheckprod,
 	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help,
 	'limittotal|ttot=i' => \$tmemtotal,
-        'limitproc|tproc=i' => \$tmem
-) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --limittotal|ttot 300000 --limitproc|tproc 10000\n";
+    'limitproc|tproc=i' => \$tmem
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod == 0){
-	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-	while (<PROD>){
-		@prodline = split(/\t/, $_);
-		$prodline[1] =~ s/\n//g;
-	}
-	close PROD;
-	if ($prodline[1] eq "0" ){
-		print "standby server \n";
-		die "This is a stand by server\n";
-	}
-}
-
-my $prodserver = hostname();
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
 if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
 
-$error = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
+$currTime = localtime();
+print "StartTime: $currTime\n";
+
+my $error = `. /opt/sap/SYBASE.sh
+isql_r -V -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 select sum(memusage)
-from sysprocesses
+from master..sysprocesses
 where 1=1
 go
 exit
 EOF
 `;
 
-if($error =~ /no|not|Msg/)
-{
-print $error;
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: ERROR - monitor_memory_usage script.
-$error
-EOF
-`;
-die "Email sent";
-}
+
+send_alert($error,"no|not|Msg",$noalert,$mail,$0,"exec proc");
+
 
 $error =~ s/\s//g;
 $error =~ s/\t//g;
@@ -80,7 +72,7 @@ print $error."\n";
 if ($error > $tmemtotal){
         
 $error = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -b<<EOF 2>&1
+isql_r -V -w900 -S$prodserver -b<<EOF 2>&1
 set nocount on
 go
 select spid,'#',DB_NAME(dbid) as 'database','#',isnull(execution_time/1000/60,-1) as execution_time,'#',status,'#',memusage,'#',physical_io,'#',isnull(suser_name(suid),'Unknown') as username,'#',
@@ -97,19 +89,9 @@ exit
 EOF
 `;
 
-if($error =~ /Msg/)
-{
-print $error . "\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_memory_usage script (get current blocks phase).
-$error
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-}
+
+send_alert($error,"no|not|Msg",$noalert,$mail,$0,"exec proc");
+
 
 $error=~s/\t//g;
 
@@ -169,7 +151,7 @@ $htmlmail .= "<p>Total memory usage in Sybase crossed the baseline. This can cau
 if ($spid == 0) {die "Could not find spid\n";}
 
 my $error2 = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b -w400<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -w400<<EOF 2>&1
 set nocount on
 set proc_return_status off
 go
@@ -183,19 +165,9 @@ exit
 EOF
 `;
 
-if($error2 =~ /Msg/)
-{
-print $error2;
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_ios script(get execution plans phase).
-$error2
-EOF
-`;
-$finTime = localtime();
-print $finTime;
-die "Email sent";
-}
+
+send_alert($error2,"no|not|Msg",$noalert,$mail,$0,"exec proc");
+
 
 $error2 =~ s/DBCC execution completed.*//g;
 $error2 =~ s/Subordinate SQL Text: //g;

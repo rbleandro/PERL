@@ -1,37 +1,46 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Script:   This script loads data into fedexresult table for last two        #
-#          weeks every night                                                 #
-#                                                                            #
-#Author:   Ahsan Ahmed
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#                                                                            #
-##############################################################################
+use Sys::Hostname;
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
-#Setting Sybase environment is set properly
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
-require "/opt/sybase/cron_scripts/set_sybase_env.pl";
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-#Set inputs
-$server = $ARGV[0];
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-#Set starting variables
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
 $currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
-
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
-
-#Execute FedExResultSet
-
+print "StartTime: $currTime\n";
 
 $sqlError = `. /opt/sybase/SYBASE.sh
-isql -Usybmaint -P\`/opt/sybase/cron_scripts/getpass.pl sybmaint\` -S$server <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use cpscan
 go
 truncate table FedExResult
@@ -41,16 +50,8 @@ go
 exit
 EOF
 `;
-if ($sqlError =~ /Msg/){
-print $sqlError."\n";
 
-$finTime = localtime();
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"exec proc");
 
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: FedExResultSet completed at $finTime
-
-$sqlError
-EOF
-`;
-}
+$currTime = localtime();
+print "Process FinTime: $currTime\n";

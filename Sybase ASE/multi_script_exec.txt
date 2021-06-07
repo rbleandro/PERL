@@ -1,0 +1,74 @@
+
+CREATE OR REPLACE PROCEDURE dbo.maintainIndexStatistics (@timeLimit varchar(8)=null,@ignoreTime bit=0,@threshold int=40)
+as
+set nocount on
+
+declare @time varchar(8)
+select @time=convert(varchar(8),getdate(),20)
+
+--restraining the time for specific databases due to past tempdb usage problems
+--if db_name() in ('mpr_data','mpr_data_lm')
+--begin
+--	set @timeLimit='02:00:00'
+--end
+
+if @timeLimit is null
+begin
+    select @timeLimit=convert(char(8),convert(time,dateadd(hour,2,getdate())),108)
+end
+
+if object_id('dba.dbo.statsMaintenanceLog') is not null
+begin
+    delete from dba.dbo.statsMaintenanceLog where inserted_on < dateadd(day,-30,getdate())
+    update dba.dbo.statsMaintenanceLog set status = 'interrupted' where status='started'
+end
+
+declare spidcurs cursor for
+select distinct 'update index statistics ' + object_name(sc.id) + case when row_count(db_id(), sc.id) > 50000000 then ' with sampling = 1 percent' end as Command
+from syscolumns sc, sysstatistics ss, systypes st, sysindexes ind,sysobjects tab
+where 1=1
+and datachange(object_name(sc.id),null,sc.name) > @threshold
+and ind.id = tab.id and
+	ind.indid > 0.0 and
+	ind.indid < 255.0 
+and ss.id = sc.id
+and sc.id = tab.id
+and convert(int,ss.c6) = st.type
+and st.name not in ("timestamp","sysname", "longsysname", "nchar", "nvarchar")
+and st.usertype < 100
+and sc.number = 0
+and convert(smallint, substring(ss.colidarray,1,2)) = sc.colid
+and ss.formatid = 100
+and USER_NAME(tab.uid) = 'dbo'
+and index_col(USER_NAME(tab.uid) + '.' + tab.name, ind.indid, 1) = sc.name
+
+Declare @str varchar(1000),@curdatetime datetime
+
+open spidcurs
+fetch next from spidcurs into @str
+While @@fetch_status = 0 and ((@time < @timeLimit and @ignoreTime=0) or @ignoreTime=1)
+Begin
+
+if object_id('dba.dbo.statsMaintenanceLog') is not null
+begin
+    set @curdatetime = getdate()
+    insert into dba.dbo.statsMaintenanceLog values (db_name(),@str,@curdatetime,'started')
+end
+
+exec(@str)
+
+if object_id('dba.dbo.statsMaintenanceLog') is not null
+begin
+    update dba.dbo.statsMaintenanceLog set status = 'completed' where inserted_on = @curdatetime and dbname = db_name()
+end
+
+select @time=convert(varchar(8),getdate(),20)
+
+fetch next from spidcurs into @str
+End
+Deallocate spidcurs
+
+
+GO
+sp_procxmode maintainIndexStatistics, 'anymode'
+go

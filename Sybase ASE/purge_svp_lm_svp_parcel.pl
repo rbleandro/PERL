@@ -1,36 +1,52 @@
 #!/usr/bin/perl -w
 
 #Script:   This script purges svp_lm..svp_parcel for data older than 2 years
-#
-#Author:		Amer Khan						     
-#Date           Name            Description
-#Feb 1 2017		Amer Khan		Created					     
+#Author:	Amer Khan						     
+#Feb 1 2017	Amer Khan	Created					     
 #Aug 18 2019	Rafael Leandro	Changed the query to achieve better performance and also to impose less stress on replication
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
-#Usage Restrictions
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
-#Set starting variables
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
+
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
+
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
+
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
 $currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-$startMin=sprintf('%02d',((localtime())[1]));
-
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
-
-#Execute Purge svp_lm..svp_parcel
+print "StartTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use svp_lm
 go
 declare \@count int
@@ -45,18 +61,7 @@ go
 exit
 EOF
 `;
-if ($sqlError =~ /Msg/){
-print $sqlError."\n";
 
-$finTime = localtime();
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Errors - Purge svp_lm..svp_parcel at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg|Error|failed",$noalert,$mail,$0,"");
 $finTime = localtime();
 print "Time Finished: $finTime\n";

@@ -1,17 +1,5 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Description	This job will run preinvoice and email results to concerned  #
-#		people.                                                      #
-#Author:    	Amer Khan						     #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#May 16 2014	Amer Khan 	Originally created                           #
-#                                                                            #
-##############################################################################
-
-#Usage Restrictions
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
 while (<PROD>){
 @prodline = split(/\t/, $_);
@@ -43,7 +31,7 @@ print "Preinvoicing StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 $currTime = localtime();
 print "\nAll flags are set running proc now $currTime\n\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\`  -b -n<<EOF 2>&1
+isql_r -V  -b -n<<EOF 2>&1
 use rev_hist_lm
 go
 declare \@invoice_date date
@@ -145,7 +133,7 @@ EOF
 $currTime = localtime();
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\`  -b -n<<EOF 2>&1
+isql_r -V  -b -n<<EOF 2>&1
 use rev_hist_lm
 go
 declare \@invoice_date date

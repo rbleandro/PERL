@@ -1,42 +1,50 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Description: This script deletes any records which are older than one year  #
-#             on monthly basis                                               #
-#                                                                            #
-#Author:	Amer Khan						     #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#Dec 18 2013	Amer Khan 	Originally created                           #
-#                                                                            #
-##############################################################################
+#Description: This script deletes any records which are older than one year on monthly basis
+#Dec 18 2013	Amer Khan 	Originally created
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
-#Usage Restrictions
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
-#Set inputs
-#Set starting variables
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
+
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
+
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
+
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
 $currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
-
-print "purge_packages_history_jcc_msg StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "StartTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use mpr_data
 go
 exec purge_packages_history_jcc
@@ -44,19 +52,8 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
-if($sqlError =~ /no|not|Msg/){
-      print "Errors may have occurred during update...\n\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: ERROR - purge_packages_history_jcc_msg
-
-Following status was received during purge_packages_history_jcc_msg that started on $currTime
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg|Error|failed",$noalert,$mail,$0,"");
 $currTime = localtime();
 print "purge_packages_history_jcc_msg FinTime: $currTime\n";
 

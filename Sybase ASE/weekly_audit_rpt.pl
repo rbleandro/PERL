@@ -9,38 +9,57 @@
 #11/01/07		Ahsan Ahmed		Originally created
 #May 10 2019	Rafael Leandro	Modified to add the DBA team to the final group and to remove obsolete mail recipients as well. Added error handling for the procedure call.
 #May 29 2019	Rafael Leandro	Removed data treatment from the script. All data treatment is now done at the database view level.
-#May 29 2019	Rafael Leandro	Simplified the bcp command (less control characters).
+#May 29 2019	Rafael Leandro	Simplified the bcp_r command (less control characters).
 #May 29 2019	Rafael Leandro	Added file compression. Now that we are auditing more events and expanding their details, we need to reduce the final file size.
 
-#Usage Restrictions
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+use lib ('/opt/sap/cron_scripts/lib');
+use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
-#Set starting variables
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
+
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
+
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
+
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
 $currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-$startMin=sprintf('%02d',((localtime())[1]));
-
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "StartTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -w300 <<EOF 2>&1
+isql_r -V -S$prodserver -w300 <<EOF 2>&1
 use sybsecurity
 go
 execute audit_thresh
 go
 exit
 EOF
-bcp sybsecurity..audit_report_vw out /tmp/audit_report_vw.tdl -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -c -t"\t"
+bcp_r sybsecurity..audit_report_vw out /tmp/audit_report_vw.tdl -V -S$prodserver -c -t"\t"
 `;
 
 if ($sqlError =~ /Msg/ || $sqlError =~ /Possible Issue Found/ || $sqlError =~ /Error/ || $sqlError =~ /ERROR/ || $sqlError =~ /error/){

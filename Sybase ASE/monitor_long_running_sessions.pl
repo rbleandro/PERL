@@ -1,51 +1,52 @@
 #!/usr/bin/perl
 
-#Script:   	This script monitors sessions running for more than 60 minutes in the database
-#Author:   	Rafael Leandro
-#Date		Name				Description
-#Jan 1 2020	Rafael Leandro		Originally created
+#Script:   		This script monitors sessions running for more than 60 minutes in the database
+#Jan 1 2020		Rafael Leandro		Originally created
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
-my $threshold=5400000;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
-my @prodline="";
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
+my $threshold=600000;
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod
-	,'to|r=s' => \$mail
-	,'threshold|t=i' => \$threshold
-) or die "Usage: $0 --skipcheckprod 0 --to rleandro\n";
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'threshold|t=i' => \$threshold,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod == 0){
-	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-	while (<PROD>){
-		@prodline = split(/\t/, $_);
-		$prodline[1] =~ s/\n//g;
-	}
-	close PROD;
-	if ($prodline[1] eq "0" ){
-		print "standby server \n";
-		die "This is a stand by server\n";
-	}
-}
-
-my $prodserver = hostname();
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
 if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
 
-#Execute monitor now
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
 my $error = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -b<<EOF 2>&1
+isql_r -V -w900 -S$prodserver -b<<EOF 2>&1
 set nocount on
 go
 DECLARE \@clockrate int
@@ -70,19 +71,9 @@ exit
 EOF
 `;
 
-if($error =~ /Msg/)
-{
-print $error . "\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_long_running_sessions script.
-$error
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-}
+
+send_alert($error,"Msg",$noalert,$mail,$0,"get sessions");
+
 
 $error =~ s/\t//g;
 
@@ -141,7 +132,7 @@ $htmlmail .= $htmltable . "</table></body></html>\n";
 if ($spid == 0) {die "Could not find spid\n";}
 
 my $error2 = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b -w400<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -w400<<EOF 2>&1
 set nocount on
 set proc_return_status off
 go
@@ -155,19 +146,9 @@ exit
 EOF
 `;
 
-if($error2 =~ /Msg/)
-{
-print $error2;
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_ios script(get execution plans phase).
-$error2
-EOF
-`;
-$finTime = localtime();
-print $finTime;
-die "Email sent";
-}
+
+send_alert($error2,"Msg",$noalert,$mail,$0,"get plan");
+
 
 $error2 =~ s/DBCC execution completed.*//g;
 $error2 =~ s/Subordinate SQL Text: //g;

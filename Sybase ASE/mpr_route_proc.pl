@@ -1,47 +1,46 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#                                                                            #
-#Author:    Amer Khan							     #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#Apr 28 2008	Amer Khan 	Originally created                           #
-#                                                                            #
-##############################################################################
-
-#Usage Restrictions
-open (PROD, "</opt/sybase/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
-if ($prodserver eq "CPDB2" ) {
-    $standbyserver = "CPDB1"; 
-}
-else
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
+
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
+
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
+
+if ($prodserver =~ /cpsybtest/)
 {
-   $standbyserver = "CPDB2";
+$prodserver = "CPSYBTEST";
 }
 
-#Set starting variables
 $currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
+print "StartTime: $currTime\n";
 
-print "mpr_route_proc StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
-
-$currTime = localtime();
-print "\nAll flags are set running proc now $currTime\n\n";
 $sqlError = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use mpr_data
 go
 set replication off
@@ -51,53 +50,10 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
-$currTime = localtime();
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"exec proc");
 
-if($sqlError =~ /no|not|Msg/){
-      print "Errors may have occurred during update...\n\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: ERROR - updating mpr_route_proc
-
-Following status was received during mpr_route_proc that started on $currTime
-$sqlError
-EOF
-`;
-
-die "Cant continue, there were errors in this mpr_route_proc at $currTime \n";
-}
-
-#$sqlError = `. /opt/sybase/SYBASE.sh
-#isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$standbyserver -b -n<<EOF 2>&1
-#use mpr_data
-#go
-#execute mpr_route_proc
-#go
-#exit
-#EOF
-#`;
-#print $sqlError."\n";
-#
-#$currTime = localtime();
-#
-#if($sqlError =~ /no|not|Msg/){
-#      print "Errors may have occurred during update...\n\n";
-#`/usr/sbin/sendmail -t -i <<EOF
-#To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-#Subject: ERROR - updating mpr_route_proc -- IN STDBY SERVER
-#
-#Following status was received during mpr_route_proc that started on $currTime
-#$sqlError
-#EOF
-#`;
-#
-#die "Cant continue, there were errors in this mpr_route_proc at $currTime \n";
-#}
-#
-#$currTime = localtime();
-#print "mpr_route_proc FinTime: $currTime\n";
-#
 `touch /tmp/mpr_route_proc_done`;
 
+$currTime = localtime();
+print "Process FinTime: $currTime\n";

@@ -55,7 +55,7 @@ print "Date to check from : $date_flag \n";
 $found = 0;
 $not_found=0;
 $sqlMsg = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 set nocount on   
 go   
 use svp_lm

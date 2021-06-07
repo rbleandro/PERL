@@ -1,64 +1,51 @@
 #!/usr/bin/perl -w
 
-##########################################################################################################################################################
-#Script:   This script takes care of keeping mpr_data and mpr_data_lm databases up to date in standby and DR servers
-#
-#Author:	Amer Khan
-#Revision:
-#Date           Name            Description
-#----------------------------------------------------------------------------
-#Oct  12 2016	Amer Khan		Created
-#July 01 2018	Rafael Leandro	Added logic to copy and load the databases on DR (CPDB4)
-#Aug  01 2019	Rafael Leandro	Added logic to dynamically setup the backup folder since they are not consistent accross the servers.
-###########################################################################################################################################################
-
-#Usage Restrictions
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
-$drserver = 'CPDB4';
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
-if (hostname() eq 'CPDB4') {
-	print "DR server \n";
-    die "This is the DR server. No additional logic will be processed until the primary servers are back online.\n"
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
+
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
+
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
+
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
 }
 
+$currTime = localtime();
+print "StartTime: $currTime\n";
+
+my $stbyserver;
+my $lbkpdir;
+my $rbkpdir;
 if ($prodserver eq 'CPDB2'){ $stbyserver = 'CPDB1'; $lbkpdir='/opt/sap'; $rbkpdir='/opt/sap';} else { $stbyserver = 'CPDB2'; $lbkpdir='/opt/sap'; $rbkpdir='/opt/sap';}
 
-print "Prod: $prodserver....Stby: $stbyserver \n";
-
-#Set starting variables
-$currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
-
-$my_pid = getppid();
-$isProcessRunning =`ps -ef|grep sybase|grep dump_databases.pl|grep -v grep|grep -v $my_pid|grep -v "vim dump_databases.pl"|grep -v "less dump_databases.pl"`;
-
-#print "My pid: $my_pid\n";
-print "Running: $isProcessRunning \n";
-
-if ($isProcessRunning){
-die "\n Can not run, previous process is still running \n";
-
-}else{
-print "No Previous process is running, continuing\n";
-}
-
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
-
-
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use master
 go
 dump database mpr_data to "$lbkpdir/db_backups/mpr_data.dmp" compression=100
@@ -84,6 +71,7 @@ die;
 }
 
 #Copying files to standby server
+my $scpError;
 $scpError=`scp -p $lbkpdir/db_backups/mpr_data.dmp sybase\@$stbyserver:$rbkpdir/db_backups`;
 print "$scpError\n";
 
@@ -98,12 +86,8 @@ print "$scpError\n";
 ##$scpError=`scp -p $lbkpdir/db_backups/mpr_data_lm.dmp sybase\@$drserver:$lbkpdir/db_backups`;
 ##print "$scpError\n";
 
-
-###############################
-#Run load in standby server now
-###############################
-
 #Loading databases into standby server
+my $load_msgs;
 $load_msgs = `ssh $stbyserver /opt/sap/cron_scripts/load_databases_mpr.pl -s $stbyserver`;
 #Loading databases into DR server
 ##$load_msgs_dr = `ssh $drserver /opt/sap/cron_scripts/load_databases_mpr.pl -s $drserver`;

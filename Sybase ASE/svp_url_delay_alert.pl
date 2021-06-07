@@ -46,7 +46,7 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use svp_cp
 go
 exec svp_url_delay_alert

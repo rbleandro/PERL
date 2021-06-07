@@ -23,8 +23,9 @@ GetOptions(
 	'to|r=s' => \$mail
 ) or die "Usage: $0 --database|d svp_cp --proc|p test_proc --to|r rleandro\n";
 
-my $prodserver = 'CPDB1';
-my $testserver = 'CPSYBTEST';
+my $prodserver = 'CPSYBTEST';
+my $testserver = 'CPDB1';
+
 my $startHour=sprintf('%02d',((localtime())[2]));
 my $startMin=sprintf('%02d',((localtime())[1]));
 
@@ -47,7 +48,7 @@ die "Email sent";
 }
 
 my $ddlgenOp=system(". /opt/sap/SYBASE.sh
-/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$testserver out /opt/sap/db_backups/toProd/$database-$proc.sql $database dbo.$proc") ;
+/opt/sap/OCS-16_0/bin/defncopy_r -V -S$prodserver out /opt/sap/db_backups/toProd/$database-$proc.sql $database dbo.$proc") ;
 
 if ($ddlgenOp =~ /Error|ERROR|not found|Msg/ or $ddlgenOp != 0){
 print $ddlgenOp."\n";
@@ -69,7 +70,7 @@ print "Test version exported successfully. Proceeding...\n";
 
 my $sqlError="";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver -n -b<<EOF 2>&1
+isql_r -V -S$testserver -n -b<<EOF 2>&1
 set nocount on
 go
 use $database
@@ -101,7 +102,7 @@ $sqlError =~ s/\s//g;
 if ($sqlError == 1)
 {
 $ddlgenOp=system(". /opt/sap/SYBASE.sh
-/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver out /opt/sap/db_backups/toProd/backup-$database-$proc-$startHour\_$startMin.sql $database dbo.$proc") ;
+/opt/sap/OCS-16_0/bin/defncopy_r -V -S$prodserver out /opt/sap/db_backups/toProd/backup-$database-$proc-$startHour\_$startMin.sql $database dbo.$proc") ;
 
 if ($ddlgenOp =~ /Error|ERROR|not found|Msg/ or $ddlgenOp != 0){
 print $ddlgenOp."\n";
@@ -120,35 +121,13 @@ EOF
 die;
 }
 
-print "Production version backed up successfully. Proceeding...\n";
+print "Test version backed up successfully. Proceeding...\n";
 }else{
-print "Object does not exist in production. Proceeding...\n";
+print "Object does not exist in test. Proceeding...\n";
 }
 
 $sqlError=`. /opt/sap/SYBASE.sh
-/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$testserver in /opt/sap/db_backups/toProd/$database-$proc.sql $database` ;
-
-if ($sqlError =~ /Error|ERROR|not found|Msg/){
-print $sqlError."\n";
-
-$finTime = localtime();
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: Errors - copy_proc_to_prod at $finTime - test script deploy
-
-$sqlError
-
-If you need to tweak this script, it is located at /opt/sap/cron_scripts/copy_proc_to_prod.pl
-EOF
-`;
-die;
-}
-
-print "Script tested successfully. Proceeding...\n";
-
-$sqlError=`. /opt/sap/SYBASE.sh
-/opt/sap/OCS-16_0/bin/defncopy -Usa -P\`/opt/sap/cron_scripts/getpass.pl sa\` -S$prodserver in /opt/sap/db_backups/toProd/$database-$proc.sql $database` ;
+/opt/sap/OCS-16_0/bin/defncopy_r -V -S$prodserver in /opt/sap/db_backups/toProd/$database-$proc.sql $database` ;
 
 if ($sqlError =~ /Error|ERROR|not found|Msg/){
 print $sqlError."\n";

@@ -1,48 +1,47 @@
 #!/usr/bin/perl
 
-#Script:   	This script checks the databases' log sizes and alerts in case they are above the threshold.
-#Author:   	Rafael Leandro
-#Date								Name												Description
-#May 18 2020	Rafael Leandro		Originally created
-
-#Usage Restrictions
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
-my @prodline="";
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 my $cput=1000;
 my $tcache=10;
 
 GetOptions(
- 'skipcheckprod|s=s' => \$skipcheckprod,
+	'skipcheckprod|s=s' => \$skipcheckprod,
 	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
 	'cputhreshold|ct=i' => \$cput,
-	'hitratiothreshold|hrt=i' => \$tcache
-) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --cputhreshold|ct 10 --hitratiothreshold|hrt\n";
+	'hitratiothreshold|hrt=i' => \$tcache,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod == 0){
-	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-	while (<PROD>){
-		@prodline = split(/\t/, $_);
-		$prodline[1] =~ s/\n//g;
-	}
-	close PROD;
-	if ($prodline[1] eq "0" ){
-		print "standby server \n";
-		die "This is a stand by server\n";
-	}
-}
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-my $prodserver = hostname();
 if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
+
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
 my @results="";
 my @line="";
@@ -77,7 +76,7 @@ th {
 $htmlmail .= "<p>Following is a summary of CPU utilization. Data from the last 7 days. More details can be found in table dba.dbo.server_health.</p>\n";
 
 my $affdb = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
+isql_r -V -w900 -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
 select avg(cpu_busy) as AvgCPU,'#',max(cpu_busy) as MaxCPU,'#',min(cpu_busy) as MinCPU
@@ -87,19 +86,7 @@ go
 EOF
 `;
 
-if($affdb =~ /Msg/)
-{
-print $affdb . "\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - server_health_report.pl script (CPU stats phase).
-$affdb
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"exec proc");
 
 $htmlmail .= "<table >
 <th>AvgCPU</th><th>MaxCPU</th><th>MinCPU</th>\n";
@@ -125,7 +112,7 @@ $htmlmail .= $htmltable . "</table>\n";
 $htmlmail .= "<p>Following is the cache hit ratio for all caches configured. If number are below 90%, it is possible that you are doing too much physical IO.</p>\n";
 
 my $logshold = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
+isql_r -V -w900 -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
 select * into #moncache_prev 
@@ -145,19 +132,7 @@ go
 EOF
 `;
 
-if($logshold =~ /Msg/)
-{
-print $logshold . "\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - server_health_report.pl script (cache hit ratio phase).
-$logshold
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"exec proc");
 
 $htmlmail .="<table><th>Cache Name</th><th>Cache Hit Ratio</th>\n";
 
@@ -182,7 +157,7 @@ $htmlmail .= $htmltable . "</table>\n";
 $htmlmail .= "<p>Below distribution for the most relevant wait statistics. Use it to check what are the bottlenecks in the server. All the numbers are cumulative since the last server restart.</p>\n";
 
 my $waits = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
+isql_r -V -w900 -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
 select case ServerUserID when 0 then "Y" else "N" end as "Server",'#',
@@ -198,19 +173,7 @@ go
 EOF
 `;
 
-if($waits =~ /Msg/)
-{
-print $waits . "\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - server_health_report.pl script (wait stats phase).
-$waits
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"exec proc");
 
 $htmlmail .="<table>
 <th>Server Wait?</th><th>Wait Description</th><th>#Occurrences</th><th>Wait Time</th>\n";
@@ -244,7 +207,7 @@ $htmlmail .= "<p>Below is the list of unbound temporary databases. Bind these AS
 $htmlmail.="<table><th>Tempdb Name</th><th>Status</th>\n";
 
 my $utempdb = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w20000 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
+isql_r -V -w20000 -S$prodserver -n -b <<EOF 2>&1
 use dba
 go
 set nocount on
@@ -255,19 +218,7 @@ go
 EOF
 `;
 
-if($utempdb =~ /Msg/)
-{
-print $utempdb . "\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - server_health_report.pl script (heavy queries phase).
-$utempdb
-EOF
-`;
-$finTime = localtime();
-print $finTime . "\n";
-die "Email sent\n";
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"exec proc");
 
 @results="";
 @line="";
@@ -300,3 +251,6 @@ $htmlmail
 
 EOF
 `;
+
+$currTime = localtime();
+print "Process FinTime: $currTime\n";

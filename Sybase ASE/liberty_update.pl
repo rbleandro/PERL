@@ -1,49 +1,49 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#                                                                            #
-#Note:     This script updates the Liberty Scanned Pickup Record database    #
-#          tables 'F_PUPRoc_Data' and 'F_PUProc_Rec' from Revenue History    #
-#          data                                                              #
-#Author:   Frasier Bellam                                                    #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#2004/12/06   Frasier Bellam  Originally created                             #
-#10/12/07       Ahsan Ahmed     Modified                                     #
-#                                                                            #
-##############################################################################
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
-#Setting Sybase environment is set properly
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
-#require "/opt/sap/cron_scripts/set_sybase_env.pl";
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-#Set inputs
-#Set starting variables
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
+
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
 $currTime = localtime();
-#$startHour=sprintf('%02d',((localtime())[6]));
-$startHour=substr($currTime,0,3);
-$startMin=sprintf('%02d',((localtime())[1]));
-
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "StartTime: $currTime\n";
 
 #Execute liberty_update
 #
 print "***Initiating liberty_update At:".localtime()."***\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 declare \@days int
 select \@days = 20
 select \@days = \@days * -1
@@ -240,17 +240,8 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
-#print "@spid\n";
-   if ($sqlError =~ /Error/ || $sqlError =~ /error/){
-      print "Messages From liberty_update...\n";
-      print "$sqlError\n";
 
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Liberty_update
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"exec proc");
 
-$sqlError
-EOF
-`;
-}
+$currTime = localtime();
+print "Process FinTime: $currTime\n";

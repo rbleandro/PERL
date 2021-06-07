@@ -5,30 +5,40 @@ use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
-my $host = hostname();
+
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
-	'to|r=s' => \$mail
-) or die "Usage: $0 --skipcheckprod 0 --to rleandro\n";
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod==0){
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod") or die "Can't open < /opt/sap/cron_scripts/passwords/check_prod : $!";
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-my @prodline="";
-while (<PROD>){
-	@prodline = split(/\t/, $_);
-	$prodline[1] =~ s/\n//g;
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
 }
 
-if ($prodline[1] eq "0" ){
-	print "standby server \n";
-	die "This is a stand by server\n"
-}
-}
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
 my $default_warning_level=85;
 
@@ -59,7 +69,7 @@ if($out ne "") {
 #print $out;
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
-Subject:   $host Low Disk Space
+Subject:   $prodserver Low Disk Space
 
 $out
 EOF

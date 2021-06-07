@@ -1,69 +1,51 @@
 #!/usr/bin/perl -w
 
-#Script:   This script dumps various databases to the secondary servers
-#Author:		Rafael Leandro
-#Date           Name            Description
-#----------------------------------------------------------------------------
+#Script:   		This script backs up the crontab entries to a file and sends it to the secondary servers
 #Aug 14 2019	Rafael Leandro		Created
 #Sep 01 2020	Rafael Leandro		Corrected alert message
 #Oct 11 2020	Rafael Leandro		Now it will also copy perl scripts to the secondary servers
 
-#Usage Restrictions
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
-use Sys::Hostname;
 
-my $prodserver = hostname();
-my $drserver = 'CPDB4';
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 my $stbyserver="";
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
-	'to|r=s' => \$mail
-) or die "Usage: $0 --skipcheckprod 0 --to rleandro\n";
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod==0){
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod") or die "Can't open < /opt/sap/cron_scripts/passwords/check_prod : $!";
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-my @prodline="";
-while (<PROD>){
-	@prodline = split(/\t/, $_);
-	$prodline[1] =~ s/\n//g;
-}
-
-if ($prodline[1] eq "0" ){
-	print "standby server \n";
-	die "This is a stand by server\n"
-}
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
 }
 
 if ($prodserver eq 'CPDB2'){ $stbyserver = 'CPDB1'; } else { $stbyserver = 'CPDB2'; }
 
-print "Prod: $prodserver....Stby: $stbyserver \n";
-
-#Set starting variables
-my $currTime = localtime();
-my $startHour=sprintf('%02d',((localtime())[2]));
-my $startMin=sprintf('%02d',((localtime())[1]));
-
-my $my_pid = getppid();
-my $isProcessRunning =`ps -ef|grep sybase|grep backup_cron_jobs.pl|grep -v grep|grep -v $my_pid|grep -v "vim backup_cron_jobs.pl"|grep -v "less backup_cron_jobs.pl"`;
-
-print "Running: $isProcessRunning \n";
-
-if ($isProcessRunning){
-die "\n Can not run, previous process is still running \n";
-
-}else{
-print "No Previous process is running, continuing\n";
-}
-
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
 system("/usr/bin/crontab -l > /opt/sap/cron_scripts/cronjobs.bk");
 
@@ -77,6 +59,8 @@ $finTime = localtime();
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
 Subject: Errors - backup_cron_jobs at $finTime during generate backup stage
+Content-Type: text/html
+MIME-Version: 1.0
 
 $cronbkp
 EOF
@@ -95,6 +79,8 @@ $finTime = localtime();
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
 Subject: Errors - backup_cron_jobs at $finTime during copy to stdby stage
+Content-Type: text/html
+MIME-Version: 1.0
 
 $stbycopy
 EOF
@@ -120,10 +106,9 @@ die;
 #die;
 #}
 
-print "Spitting cron entries here as well as secondary backup";
-my $cron=`/usr/bin/crontab -l`;
-
-print $cron;
+print "run cat /opt/sap/cron_scripts/cronjobs.bk to print the backup taken here.\n";
+#my $cron=`/usr/bin/crontab -l`;
+#print $cron;
 
 $finTime = localtime();
 print "Time Finished: $finTime\n";

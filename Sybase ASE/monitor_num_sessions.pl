@@ -1,57 +1,57 @@
 #!/usr/bin/perl
 
 #Script:   	This script monitor the number of sessions in the server.
-#
-#Author:   		Rafael Leandro
-#Date			Name				Description
-#---------------------------------------------------------------------------------
-#Aug 10 2019	Rafael Leandro  	Created
-#16/08/19   	Rafael Leandro  	Added html support for a better look in the final email.
+#Aug 10 2019	Rafael Leandro  Created
+#Aug 16 2019   	Rafael Leandro  Added html support for a better look in the final email.
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
 
-#Usage Restrictions
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
-my @prodline="";
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 my $tsession=4500;
 my $sessionlowlimit=50;
 
+
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
+	'skipcheckprod|s=s' => \$skipcheckprod,
 	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help,
 	'threshold|t=i' => \$tsession,
 	'sessionlowlimit|sll=i' => \$sessionlowlimit
-) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --threshold|t 4500 --sessionlowlimit|sll 50\n";
+) or die showDefaultHelp(1,$0);
 
-my $hour=sprintf('%02d',((localtime())[2]));
-$hour = int($hour);
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-if ($skipcheckprod == 0){
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
-}
-
-my $prodserver = hostname();
 if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
 
+$currTime = localtime();
+print "StartTime: $currTime\n";
+
 my $error = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b<<EOF 2>&1
+isql_r -V -S$prodserver -n -b<<EOF 2>&1
 set nocount on
 set proc_return_status off
 go
@@ -67,19 +67,12 @@ exit
 EOF
 `;
 
-if($error =~ /no|not|Msg/)
-{
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_num_sessions script (get current metrics phase).
-$error
-EOF
-`;
-die "Email sent";
-}
+
+send_alert($error,"no|not|Msg",$noalert,$mail,$0,"exec proc");
+
 
 my $NumConnections = `. /opt/sap/SYBASE.sh
-isql -w900 -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b<<EOF 2>&1
+isql_r -V -w900 -S$prodserver -n -b<<EOF 2>&1
 set nocount on
 go
 select isnull(hostname,'unknown') as hostname,'#',isnull(username,'unknown') as username,'#',isnull(NumSessions,0) as NumSessions,'#',isnull(status,'unknown') as status

@@ -1,12 +1,5 @@
 #!/usr/bin/perl
 
-#Script:   This script uploads gl_national_groups data from solomon onto sybase
-#          for mpr purposes
-#Author:   Amer Khan
-#Date           Name            Description
-#Dec 19 2013	   Amer Khan       Originally created
-#Apr 30 2020    Rafael Bahia    Changed db conn to use cronmpr user to allow separate tempdb usage
-
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
 while (<PROD>){
 @prodline = split(/\t/, $_);
@@ -23,7 +16,6 @@ $prodserver = hostname();
 $currDate=localtime();
 $currTime = localtime();
 $startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
 $startMin=sprintf('%02d',((localtime())[1]));
 
 print "Test Mount Point...\n";
@@ -42,7 +34,7 @@ print "GL Extract StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
 #Uploading data...
 if (-e "/opt/sap/bcp_data/mpr_data_lm/gl_extract/gl_groupings_lm.csv"){
 $bcp_msg = `. /opt/sap/SYBASE.sh
-bcp mpr_data_lm..gl_national_groups in /opt/sap/bcp_data/mpr_data_lm/gl_extract/gl_groupings_lm.csv -Ucronmpr -S$prodserver -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -c -t","  -r"\r\n" -b1`;
+bcp_r mpr_data_lm..gl_national_groups in /opt/sap/bcp_data/mpr_data_lm/gl_extract/gl_groupings_lm.csv -V -S$prodserver -c -t","  -r"\r\n" -b1`;
 }else{
  die "File not available yet, dying\n\n";
 }
@@ -50,7 +42,7 @@ bcp mpr_data_lm..gl_national_groups in /opt/sap/bcp_data/mpr_data_lm/gl_extract/
 #Any errors
 print "BCP Messages: $bcp_msg";
 
-if($bcp_msg !~ /rows copied/ ){
+if($bcp_msg =~ /failed|Error|Msg/ ){
 print "Errors may have occurred during bcp...\n\n";
 `/usr/sbin/sendmail -t -i <<EOF
 To: CANPARDatabaseAdministratorsStaffList\@canpar.com
@@ -63,7 +55,7 @@ die "Can't Continue\n\n";
 }
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use mpr_data_lm
 go
 set clientapplname \'GL Groups Data Upload\'

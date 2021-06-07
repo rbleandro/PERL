@@ -18,15 +18,10 @@ $mail = $ARGV[2];
 use Sys::Hostname;
 $prodserver = 'CPSYBTEST';
 
-#Set starting variables
-$currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-$startMin=sprintf('%02d',((localtime())[1]));
-
-$deleteoldfiles =`find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
+#$deleteoldfiles =`find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
 
 $bcpError=`. /opt/sap/SYBASE.sh 
-/opt/sap/OCS-16_0/bin/bcp $database..$table out /opt/sap/db_backups/$database\_$table\_backup.dat -n -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver`;
+/opt/sap/OCS-16_0/bin/bcp_r $database..$table out /opt/sap/db_backups/$database\_$table\_backup.dat -n -V -S$prodserver`;
 
 if ($bcpError =~ /Error/ || $bcpError =~ /Msg/){
 print $bcpError."\n";
@@ -44,7 +39,7 @@ die;
 }
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use $database
 go
 truncate table $table
@@ -68,7 +63,7 @@ die;
 }
 
 $bcpError=`. /opt/sap/SYBASE.sh 
-/opt/sap/OCS-16_0/bin/bcp $database..$table in /opt/sap/db_backups/$database\_$table.dat -n -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver`;
+/opt/sap/OCS-16_0/bin/bcp_r $database..$table in /opt/sap/db_backups/$database\_$table.dat -n -V -S$prodserver`;
 
 if ($bcpError =~ /Error/ || $bcpError =~ /Msg/){
 print $bcpError."\n";

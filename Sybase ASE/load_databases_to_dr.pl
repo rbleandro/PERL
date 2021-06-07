@@ -63,7 +63,7 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 `find /opt/sap/db_backups/ -mindepth 1 -mtime +7 -delete`;
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use master
 go
 exec dbo.rp_kill_db_processes '$database'
@@ -100,7 +100,7 @@ else
 
 if ($resumerep == 1){
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -Shqvsybrep3 <<EOF 2>&1
+isql_r -V -Shqvsybrep3 <<EOF 2>&1
 resume connection to $prodserver.$database
 go
 exit

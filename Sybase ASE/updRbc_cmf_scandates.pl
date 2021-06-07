@@ -1,47 +1,46 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Script:   This script run every day                                         #
-#                                                                            #
-#                                                                            #
-#Author:   Ahsan Ahmed
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#                                                                            #
-#10/10/2012      Ahsan Ahmed      Created
-###################################################################################
-
-#Usage Restrictions
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+use lib ('/opt/sap/cron_scripts/lib');
+use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
-#Setting Sybase environment is set properly
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
-require "/opt/sap/cron_scripts/set_sybase_env.pl";
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-#Set starting variables
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
 $currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
-
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
-
-#Execute  sp_updRbc_cmf_scandates
+print "StartTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -w300 <<EOF 2>&1
+isql_r -V -S$prodserver -w300 <<EOF 2>&1
 use cmf_data
 go
 execute sp_updRbc_cmf_scandates
@@ -49,20 +48,8 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
- if ($sqlError =~ /Error/i || $sqlError =~ /no/i || $sqlError =~ /message/i){
-      print "Messages From sp_updRbc_cmf_scandates...\n";
-      print "$sqlError\n";
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"exec proc");
 
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com,fqi\@canpar.com
-Subject: sp_updRbc_cmf_scandates errors --   not processed!!
-
-$sqlError
-EOF
-`;
-}else{
-#...
-
-}
+$currTime = localtime();
+print "Process FinTime: $currTime\n";

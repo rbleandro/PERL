@@ -28,7 +28,7 @@ $prodserver = hostname();
 #    tttl_ac_address_correction
 #######################################################
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ac_address_correction'))
@@ -45,7 +45,7 @@ $prac = $list[1];
 print "Here is the record_count: $prac  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ac_address_correction
@@ -66,7 +66,7 @@ print "Here is the IQ record_count: $iqac  \n";
 ##################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_batchdown'))
@@ -83,7 +83,7 @@ $prbd = $list[1];
 print "Here is the record_count: $prbd  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_batchdown
@@ -104,7 +104,7 @@ print "Here is the IQ record_count: $iqbd  \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_bi_bulk_inbound'))
@@ -121,7 +121,7 @@ $prbi = $list[1];
 print "Here is the record_count: $prbi  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_bi_bulk_inbound
@@ -142,7 +142,7 @@ print "Here is the IQ record_count: $iqbi  \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_cp_cod_package'))
@@ -159,7 +159,7 @@ $prcp = $list[1];
 print "Here is the record_count: $prbi  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_cp_cod_package
@@ -180,7 +180,7 @@ print "Here is the IQ record_count: $iqbi  \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ct_cod_totals'))
@@ -197,7 +197,7 @@ $prct = $list[1];
 print "Here is the record_count: $prct  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ct_cod_totals
@@ -218,7 +218,7 @@ print "Here is the IQ record_count: $iqct  \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_dc_delivery_comment'))
@@ -235,7 +235,7 @@ $prdc = $list[1];
 print "Here is the record_count: $prdc  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_dc_delivery_comment
@@ -256,7 +256,7 @@ print "Here is the IQ record_count: $iqdc  \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_dex_dlry_cross_ref'))
@@ -273,7 +273,7 @@ $prdex = $list[1];
 print "Here is the record_count: $prdex  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_dex_dlry_cross_ref
@@ -294,7 +294,7 @@ print "Here is the IQ record_count: $iqdex  \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_dr_delivery_record'))
@@ -311,7 +311,7 @@ $prdr = $list[1];
 print "Here is the record_count: $prdr  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_dr_delivery_record
@@ -332,7 +332,7 @@ print "Here is the IQ record_count: $iqdr \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ev_event'))
@@ -349,7 +349,7 @@ $prev = $list[1];
 print "Here is the record_count: $prev  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ev_event  WHERE updated_on_cons > 'Jan 1 2006 00:00:00'
@@ -364,7 +364,7 @@ $error =~ s/\s//g;
 $iqev = $list[1];
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ev_event_inserts
@@ -379,7 +379,7 @@ $error =~ s/\s//g;
 $iqevin = $list[1];
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ev_event_deletes
@@ -400,7 +400,7 @@ print "Here is the IQ tttl_ev_events record_count: $iqev \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ex_exception_comment'))
@@ -417,7 +417,7 @@ $prex = $list[1];
 print "Here is the record_count: $prex  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ex_exception_comment
@@ -438,7 +438,7 @@ print "Here is the IQ record_count: $iqex \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_fl_fuel'))
@@ -455,7 +455,7 @@ $prfl = $list[1];
 print "Here is the record_count: $prfl  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_fl_fuel
@@ -476,7 +476,7 @@ print "Here is the IQ record_count: $iqfl \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_hc_hub_cod'))
@@ -493,7 +493,7 @@ $prhc = $list[1];
 print "Here is the record_count: $prhc  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_hc_hub_cod
@@ -514,7 +514,7 @@ print "Here is the IQ record_count: $iqhc \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_hv_high_value'))
@@ -531,7 +531,7 @@ $prhv = $list[1];
 print "Here is the record_count: $prhv  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_hv_high_value
@@ -552,7 +552,7 @@ print "Here is the IQ record_count: $iqhv \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_id_driver_route_id'))
@@ -569,7 +569,7 @@ $prid = $list[1];
 print "Here is the record_count: $prid  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_id_driver_route_id
@@ -590,7 +590,7 @@ print "Here is the IQ record_count: $iqid \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ii_interline_inbound'))
@@ -607,7 +607,7 @@ $prii = $list[1];
 print "Here is the record_count: $prii  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ii_interline_inbound
@@ -628,7 +628,7 @@ print "Here is the IQ record_count: $iqii \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_incompat'))
@@ -645,7 +645,7 @@ $princompat = $list[1];
 print "Here is the record_count: $princompat  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_incompat
@@ -666,7 +666,7 @@ print "Here is the IQ record_count: $iqincompat \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_io_interline_outbound'))
@@ -683,7 +683,7 @@ $prio = $list[1];
 print "Here is the record_count: $prio  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_io_interline_outbound
@@ -704,7 +704,7 @@ print "Here is the IQ record_count: $iqio \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_lo_linehaul_outbound'))
@@ -721,7 +721,7 @@ $prlo = $list[1];
 print "Here is the record_count: $prlo  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_lo_linehaul_outbound
@@ -743,7 +743,7 @@ print "Here is the IQ record_count: $iqlo \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ma_COD'))
@@ -760,7 +760,7 @@ $prmac = $list[1];
 print "Here is the record_count: $prmac  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ma_COD
@@ -782,7 +782,7 @@ print "Here is the IQ record_count: $iqmac \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ma_barcode'))
@@ -799,7 +799,7 @@ $prmab = $list[1];
 print "Here is the record_count: $prmab  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ma_barcode
@@ -820,7 +820,7 @@ print "Here is the IQ record_count: $iqmab \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ma_document'))
@@ -837,7 +837,7 @@ $prmad = $list[1];
 print "Here is the record_count: $prmad  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ma_document
@@ -858,7 +858,7 @@ print "Here is the IQ record_count: $iqmad \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select count(*) from tttl_ma_insert_live_iq_vw
@@ -875,7 +875,7 @@ $prmam = $list[1];
 print "Here is the record_count: $prmam  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ma_live
@@ -896,7 +896,7 @@ print "Here is the IQ record_count: $iqmam \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ma_other'))
@@ -913,7 +913,7 @@ $prmao = $list[1];
 print "Here is the record_count: $prmam  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ma_other
@@ -934,7 +934,7 @@ print "Here is the IQ record_count: $iqmao \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ma_shipment'))
@@ -951,7 +951,7 @@ $prmas = $list[1];
 print "Here is the record_count: $prmas  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ma_shipment
@@ -971,7 +971,7 @@ print "Here is the IQ record_count: $iqmas \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_mb_multiple_barcodes'))
@@ -988,7 +988,7 @@ $prmb = $list[1];
 print "Here is the record_count: $prmb  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_mb_multiple_barcodes
@@ -1009,7 +1009,7 @@ print "Here is the IQ record_count: $iqmb \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ms_missorts'))
@@ -1026,7 +1026,7 @@ $prms = $list[1];
 print "Here is the record_count: $prms  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ms_missorts
@@ -1047,7 +1047,7 @@ print "Here is the IQ record_count: $iqms \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_or'))
@@ -1064,7 +1064,7 @@ $pror = $list[1];
 print "Here is the record_count: $pror  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_or
@@ -1085,7 +1085,7 @@ print "Here is the IQ record_count: $iqor \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_pa_parcel'))
@@ -1102,7 +1102,7 @@ $prpa = $list[1];
 print "Here is the record_count: $prpa  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_pa_parcel
@@ -1116,7 +1116,7 @@ $error =~ s/\s//g;
 @list = split(/\|/,$error);
 $iqpa = $list[1];
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_pa_parcel_inserts
@@ -1131,7 +1131,7 @@ $error =~ s/\s//g;
 $iqpain = $list[1];
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_pa_parcel_deletes
@@ -1159,7 +1159,7 @@ tttl_pa_parcel              (Prod): $prpa
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_pr_pickup_record'))
@@ -1176,7 +1176,7 @@ $prpr = $list[1];
 print "Here is the record_count: $prpr  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_pr_pickup_record
@@ -1197,7 +1197,7 @@ print "Here is the IQ record_count: $iqpr \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_ps_pickup_shipper'))
@@ -1214,7 +1214,7 @@ $prps = $list[1];
 print "Here is the record_count: $prps  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_ps_pickup_shipper
@@ -1235,7 +1235,7 @@ print "Here is the IQ record_count: $iqps \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_pt_pickup_totals'))
@@ -1252,7 +1252,7 @@ $prpt = $list[1];
 print "Here is the record_count: $prpt  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_pt_pickup_totals
@@ -1273,7 +1273,7 @@ print "Here is the IQ record_count: $iqpt \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_se_search'))
@@ -1290,7 +1290,7 @@ $prse = $list[1];
 print "Here is the record_count: $prse  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_se_search
@@ -1311,7 +1311,7 @@ print "Here is the IQ record_count: $iqse \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_sortation'))
@@ -1328,7 +1328,7 @@ $prsort = $list[1];
 print "Here is the record_count: $prsort  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_sortation
@@ -1349,7 +1349,7 @@ print "Here is the IQ record_count: $iqsort \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_up_US_parcels'))
@@ -1366,7 +1366,7 @@ $prup = $list[1];
 print "Here is the record_count: $prup  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_up_US_parcels
@@ -1387,7 +1387,7 @@ print "Here is the IQ record_count: $iqup \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('tttl_us'))
@@ -1404,7 +1404,7 @@ $prus = $list[1];
 print "Here is the record_count: $prus  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from tttl_us
@@ -1425,7 +1425,7 @@ print "Here is the IQ record_count: $iqus \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('bcxref'))
@@ -1442,7 +1442,7 @@ $prxref = $list[1];
 print "Here is the record_count: $prxref  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from bcxref
@@ -1462,7 +1462,7 @@ print "Here is the IQ record_count: $iqxref \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('cwparcel_live'))
@@ -1479,7 +1479,7 @@ $prparcel = $list[1];
 print "Here is the record_count: $prparcel  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from cwparcel
@@ -1499,7 +1499,7 @@ print "Here is the IQ record_count: $iqparcel \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('cwshipment'))
@@ -1516,7 +1516,7 @@ $prship = $list[1];
 print "Here is the record_count: $prship  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from cwshipment
@@ -1537,7 +1537,7 @@ print "Here is the IQ record_count: $iqship \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('cwstudy'))
@@ -1554,7 +1554,7 @@ $prstudy = $list[1];
 print "Here is the record_count: $prstudy  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from cwstudy
@@ -1576,7 +1576,7 @@ print "Here is the IQ record_count: $iqstudy \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('dimweight'))
@@ -1593,7 +1593,7 @@ $prweight = $list[1];
 print "Here is the record_count: $prweight  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from dimweight
@@ -1614,7 +1614,7 @@ print "Here is the IQ record_count: $iqweight \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('revhstd'))
@@ -1631,7 +1631,7 @@ $prhstd = $list[1];
 print "Here is the record_count: $prhstd  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from revhstd
@@ -1652,7 +1652,7 @@ print "Here is the IQ record_count: $iqhstd \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('revhstd1'))
@@ -1669,7 +1669,7 @@ $prhstd1 = $list[1];
 print "Here is the record_count: $prhstd1  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from revhstd1
@@ -1690,7 +1690,7 @@ print "Here is the IQ record_count: $iqhstd1 \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('revhstf'))
@@ -1707,7 +1707,7 @@ $prhstf = $list[1];
 print "Here is the record_count: $prhstf  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from revhstf
@@ -1728,7 +1728,7 @@ print "Here is the IQ record_count: $iqhstf \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('revhstf1'))
@@ -1745,7 +1745,7 @@ $prhstf1 = $list[1];
 print "Here is the record_count: $prhstf1  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from revhstf1
@@ -1767,7 +1767,7 @@ print "Here is the IQ record_count: $iqhstf1 \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('revhsth'))
@@ -1784,7 +1784,7 @@ $prhsth = $list[1];
 print "Here is the record_count: $prhsth  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from revhsth
@@ -1806,7 +1806,7 @@ print "Here is the IQ record_count: $iqhsth \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('revhstm'))
@@ -1823,7 +1823,7 @@ $prhstm = $list[1];
 print "Here is the record_count: $prhstm  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from revhstm
@@ -1844,7 +1844,7 @@ print "Here is the IQ record_count: $iqhstm \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('revhstr'))
@@ -1861,7 +1861,7 @@ $prhstr = $list[1];
 print "Here is the record_count: $prhstr  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from revhstr
@@ -1882,7 +1882,7 @@ print "Here is the IQ record_count: $iqhstr \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('revhsts'))
@@ -1899,7 +1899,7 @@ $prhsts = $list[1];
 print "Here is the record_count: $prhsts  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from revhsts
@@ -1920,7 +1920,7 @@ print "Here is the IQ record_count: $iqhsts \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('revhstz'))
@@ -1937,7 +1937,7 @@ $prhstz = $list[1];
 print "Here is the record_count: $prhstz  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from revhstz
@@ -1959,7 +1959,7 @@ print "Here is the IQ record_count: $iqhstz \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cmf_data
 go
 select row_count(db_id(),object_id('cmfextra2'))
@@ -1976,7 +1976,7 @@ $prex2 = $list[1];
 print "Here is the record_count: $prex2  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from cmfextra2
@@ -1997,7 +1997,7 @@ print "Here is the IQ record_count: $iqex2  \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('driver_stats'))
@@ -2014,7 +2014,7 @@ $prdrs = $list[1];
 print "Here is the record_count: $prdrs  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from driver_stats
@@ -2035,7 +2035,7 @@ print "Here is the IQ record_count: $iqdrs \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('flash_adjustments'))
@@ -2052,7 +2052,7 @@ $prfla = $list[1];
 print "Here is the record_count: $prfla  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from flash_adjustments
@@ -2073,7 +2073,7 @@ print "Here is the IQ record_count: $iqfla \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('manifest_detail'))
@@ -2090,7 +2090,7 @@ $prmnd = $list[1];
 print "Here is the record_count: $prmnd  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from manifest_detail
@@ -2111,7 +2111,7 @@ print "Here is the IQ record_count: $iqmnd \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('manifest_header'))
@@ -2128,7 +2128,7 @@ $prmnh = $list[1];
 print "Here is the record_count: $prmnh  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from manifest_header
@@ -2149,7 +2149,7 @@ print "Here is the IQ record_count: $iqmnh \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cmf_data
 go
 select row_count(db_id(),object_id('points'))
@@ -2166,7 +2166,7 @@ $prpnt = $list[1];
 print "Here is the record_count: $prpnt  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from points
@@ -2187,7 +2187,7 @@ print "Here is the IQ record_count: $iqpnt \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cmf_data
 go
 select row_count(db_id(),object_id('srvc_times_select'))
@@ -2204,7 +2204,7 @@ $prsrs = $list[1];
 print "Here is the record_count: $prsrs  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from srvc_times_select
@@ -2225,7 +2225,7 @@ print "Here is the IQ record_count: $iqsrs \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cmf_data
 go
 select row_count(db_id(),object_id('srvc_times_ground'))
@@ -2242,7 +2242,7 @@ $prsrg = $list[1];
 print "Here is the record_count: $prsrg  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from srvc_times_ground
@@ -2263,7 +2263,7 @@ print "Here is the IQ record_count: $iqsrg \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cmf_data
 go
 select row_count(db_id(),object_id('can_cost'))
@@ -2280,7 +2280,7 @@ $prcac = $list[1];
 print "Here is the record_count: $prcac  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from can_cost
@@ -2294,7 +2294,7 @@ $error =~ s/\s//g;
 @list = split(/\|/,$error);
 $iqcac = $list[1];
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from can_cost
@@ -2318,7 +2318,7 @@ print "Here is the IQ record_count: $iqcac \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cmf_data
 go
 select row_count(db_id(),object_id('cost_master'))
@@ -2335,7 +2335,7 @@ $prcam = $list[1];
 print "Here is the record_count: $prcam  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from cost_master
@@ -2356,7 +2356,7 @@ print "Here is the IQ record_count: $iqcam \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('employee'))
@@ -2373,7 +2373,7 @@ $premp = $list[1];
 print "Here is the record_count: $premp  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from employee
@@ -2394,7 +2394,7 @@ print "Here is the IQ record_count: $iqemp \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cmf_data
 go
 select row_count(db_id(),object_id('rurpers'))
@@ -2411,7 +2411,7 @@ $prrup = $list[1];
 print "Here is the record_count: $prrup  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from rurpers
@@ -2432,7 +2432,7 @@ print "Here is the IQ record_count: $iqrup \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('terminal'))
@@ -2449,7 +2449,7 @@ $prtrm = $list[1];
 print "Here is the record_count: $prtrm  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from terminal
@@ -2470,7 +2470,7 @@ print "Here is the IQ record_count: $iqtrm \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cpscan
 go
 select row_count(db_id(),object_id('truck_stats'))
@@ -2487,7 +2487,7 @@ $prtrs = $list[1];
 print "Here is the record_count: $prtrs  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from truck_stats
@@ -2509,7 +2509,7 @@ print "Here is the IQ record_count: $iqtrs \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('dsshipment'))
@@ -2526,7 +2526,7 @@ $prdss = $list[1];
 print "Here is the record_count: $prdss  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from dsshipment
@@ -2548,7 +2548,7 @@ print "Here is the IQ record_count: $iqdss \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('dsshipment_orig'))
@@ -2565,7 +2565,7 @@ $prdso = $list[1];
 print "Here is the record_count: $prdso  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from dsshipment_orig
@@ -2587,7 +2587,7 @@ print "Here is the IQ record_count: $iqdso \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('dsshipment_trail'))
@@ -2604,7 +2604,7 @@ $prdst = $list[1];
 print "Here is the record_count: $prdst  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from dsshipment_trail
@@ -2626,7 +2626,7 @@ print "Here is the IQ record_count: $iqdst \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('dsbarcode'))
@@ -2643,7 +2643,7 @@ $prdsb = $list[1];
 print "Here is the record_count: $prdsb  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from dsbarcode
@@ -2665,7 +2665,7 @@ print "Here is the IQ record_count: $iqdsb \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('dsbarcode_orig'))
@@ -2682,7 +2682,7 @@ $prdbo = $list[1];
 print "Here is the record_count: $prdbo  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from dsbarcode_orig
@@ -2704,7 +2704,7 @@ print "Here is the IQ record_count: $iqdbo \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use rev_hist
 go
 select row_count(db_id(),object_id('dsbarcode_trail'))
@@ -2721,7 +2721,7 @@ $prdbt = $list[1];
 print "Here is the record_count: $prdbt  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from dsbarcode_trail
@@ -2743,7 +2743,7 @@ print "Here is the IQ record_count: $iqdbt \n";
 #####################################################
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'|'<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -s'|'<<EOF 2>&1
 use cmf_data
 go
 select row_count(db_id(),object_id('qmaaudit'))
@@ -2760,7 +2760,7 @@ $praudit = $list[1];
 print "Here is the record_count: $praudit  \n";
 
 $error = `. /opt/sybase/SYBASE.sh
-isql -UDBA -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
+isql_r -V -Pspeed -Scpiq1 -n -b -s'|'<<EOF 2>&1
 use cpiq1
 go
 select count(*) from qmaaudit

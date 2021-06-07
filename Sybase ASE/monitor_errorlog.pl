@@ -5,15 +5,10 @@
 #          send messages when errors are found. It also monitors whether the
 #          CPDB1 server and Backup server is up
 #
-#Author:   		Amer Khan
-#Revision:
-#Date           Name            Description
-#------------------------------------------------------------------------------
-#01/07/04       Amer Khan       	Originally created
-#02/23/06       Ahsan Ahmed      	Modified for email to DBA's and documentation
-#11/01/07       Ahsan Ahmed      	Modified
-#July 28 2019	Rafael Leandro		Included the search keywords "could not" and "timeout"
-
+#Jul 01 2004   Amer Khan       	Originally created
+#Feb 23 2006   Ahsan Ahmed      	Modified for email to DBA's and documentation
+#Nov 01 2007   Ahsan Ahmed      	Modified
+#Jul 28 2019	Rafael Leandro		Included the search keywords "could not" and "timeout"
 
 open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
 while (<PROD>){
@@ -28,9 +23,7 @@ use Sys::Hostname;
 $prodserver = hostname();
 
 open(ERRORLOG,"</opt/sap/ASE-16_0/install/$prodserver.log") or die "Can't open the file /opt/sap/ASE-16_0/install/$prodserver.log: $!\n\n";
-#open(ERRORLOG,"</opt/sap/ASE-16_0/install/CPDB2_last_night.log") or die "Can't open the file\n\n";
 
-#Setting Time range to scan
 $currDate=((localtime())[5]+1900)."/".sprintf('%02d',((localtime())[4]+1))."/".sprintf('%02d',((localtime())[3]));
 $currHour=sprintf('%02d',((localtime())[2]));
 $currMin =sprintf('%02d',((localtime())[1]-1)); #Subtract one to check the past minute
@@ -63,7 +56,7 @@ while (<ERRORLOG>){
       print "Error Found\n";
 
    `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: $prodserver Error Alert
 
 Errors Found In $prodserver  Errorlog!!!
@@ -141,16 +134,11 @@ print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
                $fileLine = "$failedLogin\t$currCount\t$currHour";
                `echo "$fileLine" > /tmp/failedLogin/$failedLogin`;
             }
-
-            #print "Sending message to syslog...$secondLine\n";
-            #`/usr/bin/logger -t "Sybase ASE" $secondLine`;
          } # End of syslog logging
-
-
 
          if(($tooManyErrors == 5) && ($firstLine !~ /Login failed/)  && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/) && ($firstLine !~ /Type '1b' not allowed before login/) && ($firstLine !~ /Error: 632/) ){
          `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: $prodserver Error Alert
 
 Errors Found In $prodserver Errorlog!!!
@@ -182,7 +170,7 @@ if($getNextLine == 1){
       print "Error Found\n";
          if (($firstLine !~ /Login failed/)  && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/) && ($firstLine !~ /Type '1b' not allowed before login/) && ($firstLine !~ /Error: 632/) ){
       `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: $prodserver Error Alert
 
 Errors Found In $prodserver  Errorlog!!!
@@ -194,7 +182,6 @@ print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
             #Send a message to Linux syslog about the failed login if login has failed more than 5 times in a row
             $failedLogin = $firstLine;
             $failedLogin =~ s/(^.+User\:\s)(.+)(,.+$)(\n)/$2/;
-            #print "My failed login:$failedLogin\n";
 
             if (-e "/tmp/failedLogin/$failedLogin"){
                $loginCheck = `cat /tmp/failedLogin/$failedLogin`;
@@ -222,15 +209,12 @@ print "*********\nMail Sent To DBAs\@canpar.com\n*********\n";
                `echo "$fileLine" > /tmp/failedLogin/$failedLogin`;
             }
 
-            #print "Sending message to syslog...$firstLine\n";
-            #`/usr/bin/logger -t "Sybase ASE" $firstLine`;
-
          } # End of syslog logging
 
       }else{
          if(($tooManyErrors == 5) && ($firstLine !~ /Login failed/)  && ($firstLine !~ /Deadlock/) && ($firstLine !~ /Login failed/) && ($firstLine !~ /Type '1b' not allowed before login/) && ($firstLine !~ /Error: 632/) ){
          `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: $prodserver Error Alert
 
 Errors Found In $prodserver Errorlog!!!
@@ -260,7 +244,7 @@ if($isServerUp){
       `echo $ASEINITSRVCNT > /tmp/asesrvcnt`;
       print "\n\n***!!!Server Is Down...!!!***\n\n";
       `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: $prodserver IS DOWN!!!
 
 \*\*\*\!\!\!Server Is Down\!\!\!\*\*\*
@@ -294,7 +278,7 @@ if($isServerUp){
       `echo $BINITSRVCNT > /tmp/bsrvcnt`;
       print "\n\n***!!!Backup Server Is Down!!!***\n\n";
       `/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com,CANPARDBASybaseMobileAlerts\@canpar.com
+To: CANPARDatabaseAdministratorsStaffList\@canpar.com
 Subject: $prodserver Backup Server IS DOWN!!!
 
 \*\*\*\!\!\!Backup Server Is Down\!\!\!\*\*\*

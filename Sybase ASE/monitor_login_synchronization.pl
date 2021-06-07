@@ -1,49 +1,50 @@
 #!/usr/bin/perl
 
 #Script:   		This script will check if all the logins and roles are properly created on the secondary servers
-#Author:   		Rafael Leandro
-#Revision:
-#Date			Name				Description
-#-----------------------------------------------------------------------------------------
 #Dec 18 2019	Rafael Leandro		Originally created
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
-my @prodline="";
-my $error="";
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
-	'to|r=s' => \$mail
-) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --threshold|t 10\n";
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod == 0){
-	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-	while (<PROD>){
-		@prodline = split(/\t/, $_);
-		$prodline[1] =~ s/\n//g;
-	}
-	close PROD;
-	if ($prodline[1] eq "0" ){
-		print "standby server \n";
-		die "This is a stand by server\n";
-	}
-}
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-my $prodserver = hostname();
 if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
 
+$currTime = localtime();
+print "StartTime: $currTime\n";
+
 my $countprod = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -SCPDB1 -n -b <<EOF 2>&1
+isql_r -V -S$prodserver -n -b <<EOF 2>&1
 set nocount on
 go
 select count(*) from master..sysloginroles slr, master..syslogins sl, master..syssrvroles sr where slr.suid = sl.suid and slr.srid = sr.srid 
@@ -66,7 +67,7 @@ die "Email sent";
 }
 
 my $countstdby = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -SCPDB2 -n -b <<EOF 2>&1
+isql_r -V -SCPDB2 -n -b <<EOF 2>&1
 set nocount on
 go
 select count(*) from master..sysloginroles slr, master..syslogins sl, master..syssrvroles sr where slr.suid = sl.suid and slr.srid = sr.srid 
@@ -89,7 +90,7 @@ die "Email sent";
 }
 
 #my $countdr = `. /opt/sap/SYBASE.sh
-#isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -SCPDB4 -n -b <<EOF 2>&1
+#isql_r -V -SCPDB4 -n -b <<EOF 2>&1
 #set nocount on
 #go
 #select count(*) from master..sysloginroles slr, master..syslogins sl, master..syssrvroles sr where slr.suid = sl.suid and slr.srid = sr.srid 

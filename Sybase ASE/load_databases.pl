@@ -84,7 +84,7 @@ print $finTime . "\n";
 
 
 my $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use master
 go
 exec master.dbo.rp_kill_db_processes '$database'

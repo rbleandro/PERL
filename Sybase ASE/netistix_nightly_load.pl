@@ -85,7 +85,7 @@ foreach $filename (@file_array){
       if ($odometer eq ''){$odometer = '0';}
 
       $sqlError .= `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -w300 -e <<EOF 2>&1
+isql_r -V -S$prodserver -w300 -e <<EOF 2>&1
 use mpr_data
 go
 insert truck_data
@@ -108,7 +108,7 @@ EOF
 closedir(DIR);
 
       $sqlError = `. /opt/sybase/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sybase/cron_scripts/getpass.pl cronmpr\` -S$prodserver -w300 -e <<EOF 2>&1
+isql_r -V -S$prodserver -w300 -e <<EOF 2>&1
 use mpr_data
 go    
 update truck_data    

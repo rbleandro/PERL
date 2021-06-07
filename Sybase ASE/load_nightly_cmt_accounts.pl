@@ -1,38 +1,46 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Note:     This scrip will load cmt accounts based on the query in           #
-#          XCUSTLIST_DATA in canship_webdb                                   #
-#Author:   Ahsan Ahmed                                                       #                                                    
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#                                                                            #
-#Aug 01 2007	Amer Khan	Originally                                   # 
-##############################################################################
-#Usage Restrictions
-
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-#        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
-#Set starting variables
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
+
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
+
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
+
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
 $currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
+print "StartTime: $currTime\n";
 
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '04999'
@@ -48,26 +56,13 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
-$finTime = localtime();
 
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From CMT account refresh...\n";
-      print "$sqlError\n";
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 01");
 
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com 
-Subject: CMT Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
-
-print "Running refresh for Running Room account ... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "Running refresh for Running Room account ... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05009'
@@ -83,35 +78,13 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 02");
 
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From RunningRoom address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com  
-Subject: Running Room Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
-
-print "Running refresh for Running Room account ... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
-#$sqlError
-#EOF
-#`;
-
-#}
-
-print "Running refresh for Running Room account Jesse ... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "Running refresh for Running Room account Jesse ... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '04952'
@@ -127,29 +100,13 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 03");
 
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From RunningRoom address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Running Room Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
-
-
-print "Running refresh for Running Room account Jesse ... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "Running refresh for Running Room account Jesse ... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account in ('05051', '05052','05053')
@@ -165,29 +122,13 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query04");
 
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From RunningRoom address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Running Room Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
-
-
-print "Running refresh for Running Room account Keith/Jesse ... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "Running refresh for Running Room account Keith/Jesse ... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05059'
@@ -203,30 +144,15 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From RunningRoom address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Running Room Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query05");
 
 #####################*************************************###############################*****************************
 
-print "Running refresh for Running Room account Keith/Jesse ... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "Running refresh for Running Room account Keith/Jesse ... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '00610'
@@ -242,33 +168,15 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From RunningRoom address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Running Room Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query06");
 
 #####################*************************************###############################*****************************
 
-
-
-
-print "Running refresh for Bestsellers--Retail Only  account Requested By Jesse On May 10, 2010... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "Running refresh for Bestsellers--Retail Only  account Requested By Jesse On May 10, 2010... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05062'
@@ -284,30 +192,15 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From Bestsellers--Retail Only address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Bestsellers--Retail Only Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query07");
 
 #################################****************************************###############################*********************
 
-print "Running refresh for Bestsellers - Jack And Jones account Requested By Jesse On May 10, 2010... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "Running refresh for Bestsellers - Jack And Jones account Requested By Jesse On May 10, 2010... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05040'
@@ -323,30 +216,15 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From Bestsellers--Retail Only address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Bestsellers - Jack And Jones Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 08");
 
 #################################****************************************###############################*********************
 
-print "Running refresh for  Vero Moda account Requested By Jesse On May 10, 2010... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "Running refresh for  Vero Moda account Requested By Jesse On May 10, 2010... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05076'
@@ -362,30 +240,15 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From  Vero Moda address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Vero Moda Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 09");
 
 #################################****************************************###############################*********************
 
-print "Running refresh for  Vero Moda account Requested By Jesse On Apr 29, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "Running refresh for  Vero Moda account Requested By Jesse On Apr 29, 2011... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05079'
@@ -401,30 +264,15 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From  Vero Moda address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Vero Moda Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 10");
 
 #################################****************************************###############################*********************
 
-print "Running refresh for  Vero Moda account Requested By Jesse On Apr 29, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "Running refresh for  Vero Moda account Requested By Jesse On Apr 29, 2011... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05078'
@@ -440,31 +288,14 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
-
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From  Vero Moda address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Vero Moda Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
-
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 11");
 
 #################################****************************************###############################*********************
 
-print "Running room for account Requested By Jesse On May 12, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "Running room for account Requested By Jesse On May 12, 2011... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05080'
@@ -480,30 +311,14 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
-
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From  Vero Moda address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Vero Moda Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 12");
 
 #################################****************************************###############################*********************
 
-print " Swarski account Requested By Jesse On Aug 3, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print " Swarski account Requested By Jesse On Aug 3, 2011... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05049'
@@ -519,30 +334,14 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
-
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From Swarsksi address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Swarsski Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 13");
 
 #################################****************************************###############################*********************
 
-print "  Requested By Jesse On Oct 14, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "  Requested By Jesse On Oct 14, 2011... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05094'
@@ -558,30 +357,14 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
-
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From Swarsksi address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Swarsski Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 14");
 
 #################################****************************************###############################*********************
 
-print "  Requested By Jesse On Feb 3, 2012... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "  Requested By Jesse On Feb 3, 2012... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05006'
@@ -597,30 +380,14 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
-
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From Swarsksi address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Swarsski Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 15");
 
 #################################****************************************###############################*********************
 
-print "  Requested By Jesse On Feb 3, 2012... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "  Requested By Jesse On Feb 3, 2012... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05105'
@@ -636,29 +403,13 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
-
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From Swarsksi address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Swarsski Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 16");
 #################################****************************************###############################*********************
 
-print "  Requested By Jesse On July 10, 2012... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "  Requested By Jesse On July 10, 2012... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '00579'
@@ -674,33 +425,16 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
-
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From Swarsksi address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Swarsski Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 17");
 
 #################################****************************************###############################*********************
 
-
 #################################****************************************###############################*********************
 
-print "  Requested By Jesse On July 10, 2012... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print "  Requested By Jesse On July 10, 2012... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05140'
@@ -716,29 +450,12 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 18");
 
-
-$finTime = localtime();
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From Swarsksi address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Swarsski Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-
-}
-
-######################3#
-print " Parasuc account Requested By Jesse On Aug 29, 2011... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print " Parasuc account Requested By Jesse On Aug 29, 2011... CurrTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '00024'
@@ -755,27 +472,11 @@ exit
 EOF
 `;
 
-print $sqlError."\n";
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 19");
 
-
-$finTime = localtime();
-
-   if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-      print "Messages From Parasucu address book nightly refresh...\n";
-      print "$sqlError\n";
-
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Parasucu Accounts Errors at $finTime
-
-$sqlError
-EOF
-`;
-}
-######################3#
-print " Boathouse account Requested By Heather On June 4th, 2018... CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+print " Boathouse account Requested By Heather On June 4th, 2018... CurrTime: $currTime\n";
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use cmf_data
 go
 select customer_num as account_num into #cmt_accts from cmfshipr where billto_account = '05106'
@@ -791,15 +492,5 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
-$finTime = localtime();
-if ($sqlError =~ /Error/i || $sqlError =~ /Msg/){
-print "Messages From Boathouse address book nightly refresh...\n";
-print "$sqlError\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Boathouse Accounts Errors at $finTime
-$sqlError
-EOF
-`;
-}
+
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"query 20");

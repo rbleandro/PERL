@@ -1,39 +1,52 @@
 #!/usr/bin/perl
 
-###################################################################################
-#Script:   This script purges tables that record any inserts, updates or deletes  #
-#          in event and parcel tables                                             #
-#                                                                                 #
-#Author:   Amer Khan                                                              #
-#Revision:                                                                        #
-#Date		Name		Description                                       #
-#---------------------------------------------------------------------------------#
-#May 9,05	Amer Khan	Originally created                                #
-#                                                                                 #
-#09/01/07       Ahsan Ahmed     Modified                                          #
-#                                                                                 #
-###################################################################################
+#Script:   This script purges tables that record any inserts, updates or deletes
+#          in event and parcel tables
+#May 9,05	Amer Khan	Originally created
+#09/01/07       Ahsan Ahmed     Modified
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
-#Setting Sybase environment is set properly
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
-#require "/opt/sap/cron_scripts/set_sybase_env.pl";
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
-#Execute purge now 
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-$error = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -n -b -s'\t'<<EOF 2>&1
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
+
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
+}
+
+$currTime = localtime();
+print "StartTime: $currTime\n";
+
+$sqlError = `. /opt/sap/SYBASE.sh
+isql_r -V -S$prodserver -n -b -s'\t'<<EOF 2>&1
 use cmf_data
 go
 delete rc_zwdisc_inserts where inserted_on < dateadd(dd,-2,getdate())
@@ -41,16 +54,8 @@ go
 exit
 EOF
 `;
-print $error."\n";
 
+send_alert($sqlError,"Msg|Error|failed",$noalert,$mail,$0,"");
 
-if($error =~ /error/i || $error =~ /msg/i){
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: Trigger Tables Deleted...
-
-$error
-EOF
-`;
-}
-
+$currTime = localtime();
+print "Process FinTime: $currTime\n";

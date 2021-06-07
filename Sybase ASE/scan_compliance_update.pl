@@ -1,40 +1,46 @@
 #!/usr/bin/perl -w
 
-#Usage Restrictions
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
-if ($prodserver eq "CPDB2" ) {
-    $standbyserver = "CPDB1";
-}
-else
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
+
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
+
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
+
+if ($prodserver =~ /cpsybtest/)
 {
-   $standbyserver = "CPDB2";
+$prodserver = "CPSYBTEST";
 }
 
-
-#Set inputs
-#Set starting variables
 $currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
-
-print "StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
-
-$sqlError = ""; # Initialize Var
+print "StartTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 use scan_compliance
 go
 execute dbo.scan_compliance_update_cp NULL
@@ -46,18 +52,8 @@ go
 exit
 EOF
 `;
-print $sqlError."\n";
 
-if($sqlError =~ /no\s|not/ || $sqlError =~ /error/i){
-      print "Errors may have occurred during update...\n\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject:   $prodserver ERROR - scan_compliance_update
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"exec proc");
 
-Following status was received during scan_compliance_update execution that started on $currTime
-$sqlError
-EOF
-`;
-}
 $currTime = localtime();
-print "FinTime on $standbyserver: $currTime\n";
+print "FinTime: $currTime\n";

@@ -1,45 +1,50 @@
 #!/usr/bin/perl
 
-#Script:   		Monitors connections from uss user and kills idle connections if their number is higher than 250.
-#Jun 04 2020	        Rafael Leandro  Created
+#Script:   	Monitors connections from uss user and kills idle connections if their number is higher than 250.
+#Jun 04 2020	Rafael Leandro  Created
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
-my @prodline="";
-my $tduration=1000;
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
+	'skipcheckprod|s=s' => \$skipcheckprod,
 	'to|r=s' => \$mail,
-	'threshold|t=i' => \$tduration
-) or die "Usage: $0 --skipcheckprod|s 0 --to|r rleandro --threshold|t 1000\n";
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod == 0){
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
-}
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-my $prodserver = hostname();
 if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
 
+$currTime = localtime();
+print "StartTime: $currTime\n";
+
 my $error = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b<<EOF 2>&1
+isql_r -V -S$prodserver -n -b<<EOF 2>&1
 set nocount on
 set proc_return_status off
 go
@@ -49,14 +54,7 @@ exit
 EOF
 `;
 
-if($error =~ /no|not|Msg/ && $error != /Msg 511/)
-{
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_uss_connections.pl script.
-$error
-EOF
-`;
-die "Email sent";
-}
+send_alert($error,"no|not|Msg",$noalert,$mail,$0,"kill idle sessions");
 
+$currTime = localtime();
+print "Process FinTime: $currTime\n";

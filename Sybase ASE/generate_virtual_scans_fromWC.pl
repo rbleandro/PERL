@@ -1,53 +1,46 @@
 #!/usr/bin/perl -w
 
-##############################################################################
-#Script:   This script generates arr scans for terminal 896 in lmscan        #
-#          tttl_ev_event every 15 min                                        #
-#                                                                            #
-#Author:   Amer Khan                                                         #
-#Revision:                                                                   #
-#Date           Name            Description                                  #
-#----------------------------------------------------------------------------#
-#Nov 17 2014	Amer Khan	Originally Created                           #
-##############################################################################
-
-#Usage Restrictions
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
 use Sys::Hostname;
-$prodserver = hostname();
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
-#Set starting variables
-$currTime = localtime();
-$startHour=sprintf('%02d',((localtime())[2]));
-#$startHour=substr($currTime,0,4);
-$startMin=sprintf('%02d',((localtime())[1]));
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
-$my_pid = getppid();
-$isProcessRunning =`ps -ef|grep sybase|grep generate_virtual_scans_fromWC.pl|grep -v grep|grep -v $my_pid|grep -v "vim generate_virtual_scans_fromWC.pl"|grep -v "less generate_virtual_scans_fromWC.pl"`;
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-#print "My pid: $my_pid\n";
-print "Running: $isProcessRunning \n";
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-if ($isProcessRunning){
-die "\n Can not run, previous process is still running \n";
-
-}else{
-print "No Previous process is running, continuing\n";
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
 }
 
-print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use lmscan
 go
 exec virtual_scans_fromDEL
@@ -56,18 +49,8 @@ exit
 EOF
 `;
 
-print "Any message from the proc execution...\n $sqlError \n";
+send_alert($sqlError,"Msg",$noalert,$mail,$0,"exec proc");
 
-if ($sqlError =~ /Msg/ || $sqlError =~ /no|not/){
-print $sqlError."\n";
+$currTime = localtime();
+print "Process FinTime: $currTime\n";
 
-$finTime = localtime();
-
-`/usr/sbin/sendmail -t -i <<EOF
-To:CANPARDatabaseAdministratorsStaffList\@canpar.com 
-Subject: Error: generate_virtual_scans_fromWC at $finTime
-
-$sqlError
-EOF
-`;
-}

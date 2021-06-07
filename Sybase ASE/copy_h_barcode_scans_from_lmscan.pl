@@ -4,42 +4,47 @@ use strict;
 use warnings;
 use Sys::Hostname;
 
-my @prodline ="";
+use Sys::Hostname;
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
 
-#Usage Restrictions
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-while (<PROD>){
-@prodline = split(/\t/, $_);
-$prodline[1] =~ s/\n//g;
-}
-if ($prodline[1] eq "0" ){
-print "standby server \n";
-        die "This is a stand by server\n"
-}
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
+my $mail = 'CANPARDatabaseAdministratorsStaffList';
+my $skipcheckprod=0;
+my $noalert=0;
 my $prodserver = hostname();
+my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
-#Set starting variables
-my $currTime = localtime();
-my $startHour=sprintf('%02d',((localtime())[2]));
-my $startMin=sprintf('%02d',((localtime())[1]));
+GetOptions(
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-my $my_pid = getppid();
-my $isProcessRunning =`ps -ef|grep sybase|grep copy_h_barcode_scans_from_lmscan.pl|grep -v grep|grep -v $my_pid|grep -v "vim copy_h_barcode_scans_from_lmscan.pl"|grep -v "less copy_h_barcode_scans_from_lmscan.pl"`;
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-print "Running: $isProcessRunning \n";
-
-if ($isProcessRunning){
-die "\n Can not run, previous process is still running \n";
-
-}else{
-print "No Previous process is running, continuing\n";
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
 }
 
-print "copy_h_barcode_scans_from_lmscan StartTime: $currTime, Hour: $startHour, Min: $startMin\n";
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
-my $sqlError = `. /opt/sap/SYBASE.sh
-isql -Ucronmpr -P\`/opt/sap/cron_scripts/getpass.pl cronmpr\` -S$prodserver -b -n<<EOF 2>&1
+$sqlError = `. /opt/sap/SYBASE.sh
+isql_r -V -S$prodserver -b -n<<EOF 2>&1
 set clientapplname 'copy_h_barcode'
 go
 use cpscan
@@ -51,18 +56,8 @@ EOF
 `;
 print $sqlError."\n";
 
-if($sqlError =~ /Msg/){
-print "Errors may have occurred during update...\n\n";
-`/usr/sbin/sendmail -t -i <<EOF
-To: CANPARDatabaseAdministratorsStaffList\@canpar.com
-Subject: ERROR - copy_h_barcode_scans_from_lmscan
-
-Following status was received during copy_h_barcode_scans_from_lmscan that started on $currTime
-$sqlError
-EOF
-`;
-$currTime = localtime();
-print $currTime . "\n";
+if ($sqlError !~ /Attempt to insert duplicate key row in object 'PictureDataCapture'/i){
+        send_alert($sqlError,"Msg",$noalert,$mail,$0,"exec proc");
 }
 $currTime = localtime();
 print "copy_h_barcode_scans_from_lmscan FinTime: $currTime\n";

@@ -1,66 +1,133 @@
 #!/usr/bin/perl
 
 #Script:   	This script monitor failed cron jobs.
-#
-#Author:   		Rafael Leandro
-#Date			Name				Description
-#---------------------------------------------------------------------------------
 #Aug 13 2019	Rafael Leandro  	Created
 
+use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
-use Sys::Hostname;
-my $prodserver = hostname();
+use lib ('/opt/sap/cron_scripts/lib');
+use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
 
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime=localtime();
+my $help=0;
+my $sqlError="";
+my $scriptpath="";
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
-	'to|r=s' => \$mail
-) or die "Usage: $0 --skipcheckprod 0 --to rleandro\n";
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
-#Usage Restrictions
-my $hour=sprintf('%02d',((localtime())[2]));
-$hour = int($hour);
-
-if ($skipcheckprod==0){
-open (PROD, "</opt/sap/cron_scripts/passwords/check_prod") or die "Can't open < /opt/sap/cron_scripts/passwords/check_prod : $!";
-
-my @prodline="";
-while (<PROD>){
-	@prodline = split(/\t/, $_);
-	$prodline[1] =~ s/\n//g;
+if ($prodserver =~ /cpsybtest/)
+{
+$prodserver = "CPSYBTEST";
 }
 
-if ($prodline[1] eq "0" ){
-	print "standby server \n";
-	die "This is a stand by server\n"
-}
-}
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
 my $grep="";
-$grep = `grep -iRl "warning" /opt/sap/cron_scripts/cron_logs ; grep -iRl "unable" /opt/sap/cron_scripts/cron_logs ; grep -iRl "compilation" /opt/sap/cron_scripts/cron_logs ; grep -iRl "No such file" /opt/sap/cron_scripts/cron_logs ; grep -iRl "not found" /opt/sap/cron_scripts/cron_logs ; grep -iRl "denied" /opt/sap/cron_scripts/cron_logs; grep -iRl "Bad IDN" /opt/sap/cron_scripts/cron_logs;grep -iRl "Error sending message" /opt/sap/cron_scripts/cron_logs;`;
+$grep .= `grep -iRl "aborted" /opt/sap/cron_scripts/cron_logs` ; 
+$grep .= `grep -iRl "unable" /opt/sap/cron_scripts/cron_logs`; 
+$grep .= `grep -iRl "compilation" /opt/sap/cron_scripts/cron_logs`; 
+$grep .= `grep -iRl "No such file" /opt/sap/cron_scripts/cron_logs`; 
+$grep .= `grep -iRl "not found" /opt/sap/cron_scripts/cron_logs`; 
+$grep .= `grep -iRl "denied" /opt/sap/cron_scripts/cron_logs`; 
+$grep .= `grep -iRl "Bad IDN" /opt/sap/cron_scripts/cron_logs`; 
+$grep .= `grep -iRl "Error sending message" /opt/sap/cron_scripts/cron_logs`; 
+$grep .= `grep -iRl "failed" /opt/sap/cron_scripts/cron_logs`; 
+$grep .= `grep -iRl "invalid" /opt/sap/cron_scripts/cron_logs`; 
+$grep .= `grep -iRl "Argument list too long" /opt/sap/cron_scripts/cron_logs`; 
+$grep .= `grep -iRl "Undefined subroutine" /opt/sap/cron_scripts/cron_logs`; 
+$grep .= `grep -iRl "Can't locate" /opt/sap/cron_scripts/cron_logs`; 
 
-if ($grep ne "")
-{
+my $grepstatus = $? >> 8;
+#print "$grepstatus\n";
+#print "$grep\n";
+
+if ($grepstatus != 1) {
+print "Failed with status $grepstatus.Below are the errors.\n\n";
+
+$finTime = localtime();
+print "Fintime: $finTime\n";
+
+if (!$noalert){
+$grep =~ s/\n/<\/br>/g;
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
-Subject: Failed jobs alert!!!
-
-Below is a list of current failing jobs. Check the jobs' logs to see what needs to be done.
+Subject: Errors - monitor_failed_jobs during grep phase at $finTime
+Content-Type: text/html
+MIME-Version: 1.0
 
 $grep
-
-Script name: $0
-
 EOF
 `;
 }
+die;
+}else{
+print "Completed with status $grepstatus.\n";
+}
+
+my @results="";
+my $joblogcontent="";
+my $logpath="";
+my $finalmessage="</br>################################</br>";
+
+@results = split(/\n/,$grep);
+
+for (my $i=0; $i <= $#results; $i++){
+	$logpath = $results[$i];
+	$scriptpath = $results[$i];
+	$scriptpath =~ s/cron_logs\///g;
+	$scriptpath =~ s/.log$/.pl/g;
+	$joblogcontent=`cat $logpath`;
+	
+	$finalmessage=$finalmessage . "Job log path: $logpath</br>To rerun the failed job: perl $scriptpath</br>Log content</br>{</br>$joblogcontent</br>}" . "<p>################################</p>";
+}
+
+my $body = "<p>Below is a list of current failing jobs and the contents of their logs at the moment of failure.</p>";
+$body .= "<p>$finalmessage</p>";
+$body .= "<p>This alert's script is located at name: $0.</p>";
+
+#if ($grep =~ /unable/i || $grep =~ /compilation/i || $grep =~ /No such file/i || $grep =~ /not found/i || $grep =~ /denied/i || $grep =~ /Bad IDN/i || $grep =~ /Error sending message/i)
+if ($grep)
+{
+if ($noalert == 0){
+`/usr/sbin/sendmail -t -i <<EOF
+To: $mail\@canpar.com
+Subject: Failed jobs alert!!!
+Content-Type: text/html
+MIME-Version: 1.0
+
+$body
+
+EOF
+`;
+}else{
+	$currTime = localtime();
+	print "Finished at $currTime.\n\nBelow is the final message generated by the alert.\n\n$body\n";
+}
+
+}
 else
 {
-print "No failed jobs found.\n";
+	$currTime = localtime();
+	print "No problems found at $currTime.\n";
 }

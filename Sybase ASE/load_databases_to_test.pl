@@ -45,7 +45,7 @@ print "CurrTime: $currTime, Hour: $startHour, Min: $startMin\n";
 `sudo find /opt/sap/db_backups/ -mindepth 1 -mtime +60 -delete`;
 
 $sqlError = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver <<EOF 2>&1
+isql_r -V -S$prodserver <<EOF 2>&1
 use master
 go
 exec rp_kill_db_processes '$destDB'

@@ -3,54 +3,55 @@
 #Script:   This script monitors any blocking that exists for over 5 minutes
 #          or any blocks caused by sleeping processes with open transactions for
 #          more than 10 seconds
-#Author:   Amer Khan
-#Date		Name			Description
-#05/04/05	Amer Khan		Originally created
-#10/12/07   Ahsan Ahmed     Modified
-#11/07/18   Rafael Leandro  Formating ajustments.
-#14/12/18   Rafael Leandro  Added automatic kill for phantom processes blocking for more than 10 minutes.
-#12/08/19   Rafael Leandro  Reduced clutter in the code and in the final email. Script now tells how many processes are blocked in the server.
-#16/08/19   Rafael Leandro  Added html support for a better look in the final email.
+#Apr 05 2005	Amer Khan		Originally created
+#Oct 12 2007   	Ahsan Ahmed     Modified
+#Jul 11 2018   	Rafael Leandro  Formating ajustments.
+#Dec 14 2018   	Rafael Leandro  Added automatic kill for phantom processes blocking for more than 10 minutes.
+#Dec 08 2019   	Rafael Leandro  Reduced clutter in the code and in the final email. Script now tells how many processes are blocked in the server.
+#Aug 16 2019   	Rafael Leandro  Added html support for a better look in the final email.
+#May 10 2021	Rafael Leandro 	Added several features and enabled kerberos auth
 
 use Sys::Hostname;
 use strict;
 use warnings;
 use Getopt::Long qw(GetOptions);
 
+use lib ('/opt/sap/cron_scripts/lib'); use Validation qw( send_alert checkProcessByName showDefaultHelp isProd );
+
 my $mail = 'CANPARDatabaseAdministratorsStaffList';
 my $skipcheckprod=0;
+my $noalert=0;
+my $prodserver = hostname();
 my $finTime = localtime();
-my @prodline="";
+my $checkProcessRunning=1;
+my $my_pid="";
+my $currTime="";
+my $help=0;
+my $sqlError="";
 
 GetOptions(
-    'skipcheckprod|s=s' => \$skipcheckprod,
-	'to|r=s' => \$mail
-) or die "Usage: $0 --skipcheckprod 0 --to rleandro\n";
+	'skipcheckprod|s=s' => \$skipcheckprod,
+	'to|r=s' => \$mail,
+	'dbserver|ds=s' => \$prodserver,
+	'skipcheckprocess|p=i' => \$checkProcessRunning,
+	'noalert' => \$noalert,
+	'help|h' => \$help
+) or die showDefaultHelp(1,$0);
 
-if ($skipcheckprod == 0){
-	open (PROD, "</opt/sap/cron_scripts/passwords/check_prod");
-	while (<PROD>){
-		@prodline = split(/\t/, $_);
-		$prodline[1] =~ s/\n//g;
-	}
-	close PROD;
-	if ($prodline[1] eq "0" ){
-		print "standby server \n";
-		die "This is a stand by server\n";
-	}
-}
-
-my $prodserver = hostname();
+showDefaultHelp($help,$0);
+checkProcessByName($checkProcessRunning,$0);
+isProd($skipcheckprod);
 
 if ($prodserver =~ /cpsybtest/)
 {
 $prodserver = "CPSYBTEST";
 }
 
-#Execute monitor now
+$currTime = localtime();
+print "StartTime: $currTime\n";
 
 my $error = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -w900 -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -b<<EOF 2>&1
+isql_r -V -S$prodserver -w900 -b<<EOF 2>&1
 set nocount on
 go
 select s1.spid,'#',s2.spid,'#',suser_name(s1.suid) blocked_user,'#',suser_name(s2.suid) blocking_user,'#',s1.time_blocked,'#',s2.physical_io
@@ -66,19 +67,7 @@ exit
 EOF
 `;
 
-if($error =~ /Msg/)
-{
-print $error;
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_blocks script (get current blocks phase).
-$error
-EOF
-`;
-$finTime = localtime();
-print $finTime;
-die "Email sent";
-}
+send_alert($error,"Msg",$noalert,$mail,$0,"get current blocks");
 
 $error=~s/\t//g;
 
@@ -115,10 +104,10 @@ $tblockedmin=sprintf("%.2f", $tblockedmin);
 #I will only proceed if there is indeed a blocking process on the server
 if ($spid2 != 0){
 
-if ($tblocked > 10){
+if ($tblocked > 45){
 
 my $error2 = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b -w400<<EOF 2>&1
+isql_r -V -S$prodserver -n -b -w400<<EOF 2>&1
 set nocount on
 set proc_return_status off
 go
@@ -134,19 +123,7 @@ exit
 EOF
 `;
 
-if($error2 =~ /Msg/)
-{
-print $error2;
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_blocks script(get execution plans phase).
-$error2
-EOF
-`;
-$finTime = localtime();
-print $finTime;
-die "Email sent";
-}
+send_alert($error2,"Msg",$noalert,$mail,$0,"get execution plans");
 
 my $plandetails="";
 
@@ -158,26 +135,14 @@ for (my $i=0; $i <= $#results; $i++){
 if($error2 =~ /Possibly the query has not started or has finished executing/ && $tblocked > 600)
 {
 my $error3 = `. /opt/sap/SYBASE.sh
-isql -Usybmaint -P\`/opt/sap/cron_scripts/getpass.pl sybmaint\` -S$prodserver -n -b <<EOF 2>&1
+isql_r -V -S$prodserver -n -b <<EOF 2>&1
 kill $spid2
 go
 exit
 EOF
 `;
 
-if($error3 =~ /no|not|Msg/)
-{
-print $error3;
-`/usr/sbin/sendmail -t -i <<EOF
-To: $mail\@canpar.com
-Subject: ERROR - monitor_blocks script(kill phase).
-$error3
-EOF
-`;
-$finTime = localtime();
-print $finTime;
-die "Email sent";
-}
+send_alert($error3,"no|not|Msg",$noalert,$mail,$0,"exec sp_getRunningProcesses");
 
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
