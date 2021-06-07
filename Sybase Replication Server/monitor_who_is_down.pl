@@ -31,7 +31,10 @@ print $error . "\n";
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
 Subject: ERROR - monitor_who_is_down.pl script.
-$error
+Content-Type: text/html
+MIME-Version: 1.0
+
+<p>$error</p>
 EOF
 `;
 }
@@ -75,7 +78,12 @@ print $check . "\n";
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
 Subject: ERROR - monitor_who_is_down.pl script.
-$check
+Content-Type: text/html
+MIME-Version: 1.0
+
+<p>$check</p>
+
+<p>Script's location: $0</p>
 EOF
 `;
 }
@@ -111,8 +119,16 @@ print "$results[$i]\n";
 `/usr/sbin/sendmail -t -i <<EOF
 To: $mail\@canpar.com
 Subject: hqvsybrep3 -- Who Is Down Alert -- \`date\`
+Content-Type: text/html
+MIME-Version: 1.0
 
-$results[$i]
+<p>$results[$i]</p>
+
+<p>resume connection to $sds.$db execute transaction</p>
+<p>resume connection to $sds.$db skip transaction</p>
+<p>tail -n500 /opt/sybase/REP-15_5/install/hqvsybrep3.log | grep "E.\|Message"</p>
+
+<p>Script's location: $0</p>
 
 EOF
 `;
